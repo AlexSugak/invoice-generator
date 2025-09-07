@@ -1,0 +1,19 @@
+{
+  "name": "@invoice/generator",
+    "packageManager": "yarn@4.6.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "withenv": "node --env-file=.env scripts/run-with-env.js",
+    "dev:web": "yarn workspace @invoice/web dev",
+    "dev:api": "yarn withenv workspace @invoice/pdf-api start:dev",
+    "build:common": "yarn workspace @invoice/common build",
+    "build:web": "yarn build:common && yarn workspace @invoice/web build",
+    "build:api": "yarn build:common && yarn workspace @invoice/pdf-api build",
+    "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f"
+  }
+}
