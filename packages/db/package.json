@@ -1,0 +1,20 @@
+{
+  "name": "@invoice/db",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "migrate": "ts-node src/migrate.ts",
+    "migration:create": "node src/create-migration.js"
+  },
+  "dependencies": {
+    "pg": "^8.16.3",
+    "umzug": "^3.8.2"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.5",
+    "ts-node": "^10.9.2"
+  }
+}

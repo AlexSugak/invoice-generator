@@ -1,6 +1,6 @@
 {
   "name": "@invoice/generator",
-    "packageManager": "yarn@4.6.0",
+  "packageManager": "yarn@4.6.0",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -14,6 +14,8 @@
     "build:api": "yarn build:common && yarn workspace @invoice/pdf-api build",
     "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
     "docker:down": "docker-compose -f docker-compose.dev.yml down",
-    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f"
+    "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "migration:create": "yarn withenv workspace @invoice/db migration:create",
+    "migrate": "yarn withenv workspace @invoice/db migrate"
   }
 }

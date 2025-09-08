@@ -1,0 +1,12 @@
+-- Up Migration
+
+CREATE TABLE api_keys (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  key VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_api_keys_key ON api_keys(key);
