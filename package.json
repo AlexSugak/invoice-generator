@@ -16,6 +16,9 @@
     "docker:down": "docker-compose -f docker-compose.dev.yml down",
     "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
     "migration:create": "yarn withenv workspace @invoice/db migration:create",
-    "migrate": "yarn withenv workspace @invoice/db migrate"
+    "migrate": "yarn withenv workspace @invoice/db migrate",
+    "db:api-key": "yarn withenv node ./scripts/insert-api-key.js",
+    "api-key": "node ./scripts/generate-api-key.js",
+    "db:invoice-template": "yarn withenv node ./scripts/insert-invoice-template.js"
   }
 }
