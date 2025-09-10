@@ -11,7 +11,7 @@ import { Response } from 'express';
 import { getLogger } from '@invoice/common';
 
 const logger = getLogger('PdfController');
-@Controller('pdf')
+@Controller('api/pdf')
 @RequireApiKey()
 export class PdfController {
   constructor(private readonly pdfService: PdfService) {}

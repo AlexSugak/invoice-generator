@@ -1153,6 +1153,7 @@ __metadata:
   dependencies:
     "@invoice/common": "workspace:*"
     "@tailwindcss/postcss": "npm:^4"
+    "@tanstack/react-query": "npm:^5.87.4"
     "@types/node": "npm:^20"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
@@ -2183,6 +2184,24 @@ __metadata:
     postcss: "npm:^8.4.41"
     tailwindcss: "npm:4.1.13"
   checksum: 10/9f54147d33b43d224d2999155c31b662781400a4d2b1ffac7ea43bb0fbe185f2f68c4fead8964f2752567f5325ccd5604fe8174cf581c55b2862c7e917a1d5b6
+  languageName: node
+  linkType: hard
+
+"@tanstack/query-core@npm:5.87.4":
+  version: 5.87.4
+  resolution: "@tanstack/query-core@npm:5.87.4"
+  checksum: 10/30f82a3bcea5dac5e7a3d2caa1734264832e5b54a0c01c791b06e3faefd7a1359f454e5e4cbde9cefe149ab8176c26e63d323dbf5b877dab38d90b6979b4bbba
+  languageName: node
+  linkType: hard
+
+"@tanstack/react-query@npm:^5.87.4":
+  version: 5.87.4
+  resolution: "@tanstack/react-query@npm:5.87.4"
+  dependencies:
+    "@tanstack/query-core": "npm:5.87.4"
+  peerDependencies:
+    react: ^18 || ^19
+  checksum: 10/e8fdd39298a89f11744195503f9de147241813edcf198e2a63fa2b1dfbee96d847672c46fa5537ac886745add29968ed4f074f3bf17b0d8bf362a2575cfc6061
   languageName: node
   linkType: hard
 

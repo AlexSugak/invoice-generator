@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 
 /* =========================
  * Types
@@ -612,6 +613,31 @@ export default function InvoicePage() {
 
   const fmt = currencyFormatter(invoice.currency);
 
+  const {
+    mutate: generatePdf,
+    isPending,
+    isError,
+    error,
+  } = useGenerateInvoicePdf();
+  const handleGeneratePdf = async () => {
+    await generatePdf(invoice, {
+      onSuccess: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${new Date().toISOString().slice(0, 10)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      },
+    });
+  };
+
+  if (isError) {
+    console.error('failed to generate PDF', error);
+  }
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -632,15 +658,15 @@ export default function InvoicePage() {
         </div>
       </div>
 
-      {/* Debug: full JSON state (remove in production) */}
-      <details className="mt-6">
-        <summary className="cursor-pointer text-sm text-gray-500">
-          Show invoice JSON
-        </summary>
-        <pre className="mt-2 rounded-md bg-gray-50 p-3 text-xs text-gray-800">
-          {JSON.stringify(invoice, null, 2)}
-        </pre>
-      </details>
+      <div className="pt-2 w-full flex justify-end">
+        <button
+          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
+          onClick={handleGeneratePdf}
+          disabled={isPending}
+        >
+          Create Invoice PDF
+        </button>
+      </div>
     </main>
   );
 }

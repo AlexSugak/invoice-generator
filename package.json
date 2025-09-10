@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "withenv": "node --env-file=.env scripts/run-with-env.js",
-    "dev:web": "yarn workspace @invoice/web dev",
+    "dev:web": "yarn withenv workspace @invoice/web dev",
     "dev:api": "yarn withenv workspace @invoice/pdf-api start:dev",
     "build:common": "yarn workspace @invoice/common build",
     "build:web": "yarn build:common && yarn workspace @invoice/web build",
