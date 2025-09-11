@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        // Handle NextAuth.js routes internally
+        source: '/api/auth/:path*',
+        destination: '/api/auth/:path*',
+      },
+      {
         source: '/api/:path*',
         destination: 'http://localhost:3001/api/:path*', // Proxy to backend
       },

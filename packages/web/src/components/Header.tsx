@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import React from 'react';
+import { SignInButton } from './SignInButton';
 
 export default function Header() {
   return (
@@ -47,18 +48,7 @@ export default function Header() {
             <span className="i-lucide-sun h-4 w-4" />
           </button>
 
-          <Link
-            href="/signin"
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/signup"
-            className="rounded-md bg-emerald-600 px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
-          >
-            Sign Up
-          </Link>
+          <SignInButton />
         </div>
       </div>
     </header>

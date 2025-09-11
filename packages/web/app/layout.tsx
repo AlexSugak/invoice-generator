@@ -29,14 +29,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen flex flex-col`}
       >
-        <Header />
-        <main className="flex flex-1 mx-auto w-full max-w-7xl px-4 py-6">
-          <Providers>{children}</Providers>
-        </main>
-        {/* Footer */}
-        <footer className="py-8 text-center text-sm text-gray-500">
-          © {new Date().getFullYear()} Invoice-PDF. All rights reserved.
-        </footer>
+        <Providers>
+          <Header />
+          <main className="flex flex-1 mx-auto w-full max-w-7xl px-4 py-6">
+            {children}
+          </main>
+          {/* Footer */}
+          <footer className="py-8 text-center text-sm text-gray-500">
+            © {new Date().getFullYear()} Invoice-PDF. All rights reserved.
+          </footer>
+        </Providers>
       </body>
     </html>
   );
