@@ -9,9 +9,13 @@
     "withenv": "node --env-file=.env scripts/run-with-env.js",
     "dev:web": "yarn withenv workspace @invoice/web dev",
     "dev:api": "yarn withenv workspace @invoice/pdf-api start:dev",
+    "dev:all": "concurrently -k -s first \"yarn dev:api\" \"yarn dev:web\"",
     "build:common": "yarn workspace @invoice/common build",
     "build:web": "yarn build:common && yarn workspace @invoice/web build",
     "build:api": "yarn build:common && yarn workspace @invoice/pdf-api build",
+    "test:web:install": "yarn workspace @invoice/web playwright install",
+    "test:web:e2e": "concurrently -k \"yarn dev:all\" \"wait-on tcp:3000 tcp:3001 && yarn withenv workspace @invoice/web test:e2e\"",
+    "test:web:e2e:ui": "concurrently -k \"yarn dev:all\" \"wait-on tcp:3000 tcp:3001 && yarn withenv workspace @invoice/web test:e2e:ui\"",
     "docker:up": "docker-compose -f docker-compose.dev.yml up -d",
     "docker:down": "docker-compose -f docker-compose.dev.yml down",
     "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
@@ -20,5 +24,9 @@
     "db:api-key": "yarn withenv node ./scripts/insert-api-key.js",
     "api-key": "node ./scripts/generate-api-key.js",
     "db:invoice-template": "yarn withenv node ./scripts/insert-invoice-template.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "wait-on": "^8.0.4"
   }
 }

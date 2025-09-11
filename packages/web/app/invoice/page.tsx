@@ -162,6 +162,7 @@ function InvoiceHeader({
           <h1 className="text-4xl font-semibold tracking-wide">INVOICE</h1>
           <div className="flex items-center gap-2 pl-2">
             <Input
+              name="invoiceNumber"
               prefix="#"
               value={invoice.invoiceNumber}
               onChange={(e) =>
@@ -353,6 +354,7 @@ function LineItemRow({
       <div className="col-span-4 md:col-span-2">
         <Input
           type="number"
+          name="rate"
           step="0.01"
           min="0"
           label="Rate"
