@@ -17,6 +17,8 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('API key is required');
     }
 
+    // TODO: cache this
+
     const [key] = await sql<Array<{ id: number }>>`
       SELECT id 
       FROM api_keys 

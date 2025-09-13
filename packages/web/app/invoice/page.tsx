@@ -1,7 +1,13 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
+import { useDraftDetails } from './_lib/useDraftDetails';
+import { useSession } from 'next-auth/react';
+import { useSaveDraft } from './_lib/useSaveDraft';
+import { getLogger } from '@invoice/common';
+
+const logger = getLogger('invoice editor');
 
 /* =========================
  * Types
@@ -336,6 +342,7 @@ function LineItemRow({
         <Input
           placeholder="Description of item/service..."
           value={item.description}
+          label="Description"
           onChange={(e) => onChange({ ...item, description: e.target.value })}
         />
       </div>
@@ -635,6 +642,30 @@ export default function InvoicePage() {
       },
     });
   };
+
+  const { data: session } = useSession();
+  const { data: savedDraft } = useDraftDetails({
+    userName: session?.user?.email || '',
+    enabled: !!session?.user?.email,
+  });
+
+  // logger.debug('draft', savedDraft);
+  useEffect(() => {
+    logger.debug('setInvoice effect', { savedDraft });
+    const draft = JSON.parse((savedDraft as any as string) || '{}');
+    if (draft.params) {
+      logger.debug('setInvoice with ', draft.params);
+      setInvoice(draft.params as Invoice);
+    }
+  }, [savedDraft]);
+
+  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveDraft(invoice);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [invoice]);
 
   if (isError) {
     console.error('failed to generate PDF', error);
