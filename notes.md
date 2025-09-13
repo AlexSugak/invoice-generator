@@ -27,3 +27,17 @@ POST: not idempotent (some effect)
 - Add new endpoint? Get all drafts for user?
 - Continue to save drafts every 2 seconds? Or use separate button? (UX)
 - Make PR
+
+
+
+# Homework Solution
+
+- How to get the list of previously saved drafts?
+   - Add new API endpoint GET to fetch the list of all the drafts per user: GET `api/users/<user>/drafts
+- How to put different drafts to this list?
+   - Update the API endpoint to receive and PUT draft name (not the default 'invoice-draft')
+
+- How the feature will work (behavior)?
+   - User will be able to see the list of drafts and select one of them or create the new one
+   - By editing or creating the draft, user needs to enter the name of the draft
+   - Use separate button to save draft

@@ -10,23 +10,19 @@ if (!apiKey) {
   throw new Error('missing NEXT_PUBLIC_API_KEY');
 }
 
-export function useDraftDetails({
+export function useDrafts({
   userName,
-  draftName,
   enabled,
 }: {
   userName: string;
-  draftName: string;
   enabled: boolean;
 }) {
   const query = useGetQuery<
-    { userName: string; name: string; params: Record<string, any> },
-    Blob
+    Array<{ userName: string; name: string; params: Record<string, any> }>
   >(
     {
-      endpoint: `/api/users/${userName}/drafts/${draftName}`,
+      endpoint: `/api/users/${userName}/drafts`,
       requestOptions: {
-        noJson: true,
         headers: {
           'X-API-Key': apiKey!,
         },

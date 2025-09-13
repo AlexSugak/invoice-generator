@@ -84,4 +84,17 @@ export class DraftController {
 
     return draftDetails;
   }
+
+  @Get('users/:userName/drafts')
+  public async getDrafts(
+    @Param('userName') userName: string,
+  ): Promise<DraftDetails[]> {
+    logger.debug('getDrafts', { userName });
+
+    const drafts = await this.draftServie.getDrafts({
+      userName,
+    });
+
+    return drafts;
+  }
 }
