@@ -35,7 +35,6 @@ export function useDraftDetails({
     },
     {
       enabled,
-      staleTime: Infinity,
     },
   );
 

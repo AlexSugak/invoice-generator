@@ -31,7 +31,6 @@ export function useDrafts({
     },
     {
       enabled,
-      staleTime: Infinity,
     },
   );
 

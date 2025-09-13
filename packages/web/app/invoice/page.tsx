@@ -611,7 +611,7 @@ export default function InvoicePage() {
     currency: 'USD',
   });
 
-  const [draftName, setDraftName] = useState(draftParam || 'my-invoice-draft');
+  const [draftName, setDraftName] = useState(draftParam || '');
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
@@ -691,11 +691,12 @@ export default function InvoicePage() {
     console.error('failed to generate PDF', error);
   }
 
+  console.log(!draftName.trim())
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="flex items-center gap-3 mb-6">
         <label className="text-sm font-medium text-gray-700" htmlFor="draftName">
-          Draft Name:
+          * Draft Name:
         </label>
         <input
           id="draftName"
@@ -705,8 +706,9 @@ export default function InvoicePage() {
           onChange={(e) => setDraftName(e.target.value)}
         />
         <button
-          className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-base font-medium text-white hover:bg-emerald-700 h-10"
+          className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-base font-medium text-white hover:bg-emerald-700 h-10 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => saveDraft(invoice)}
+          disabled={!draftName.trim()}
         >
           Save draft
         </button>
