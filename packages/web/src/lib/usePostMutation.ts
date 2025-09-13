@@ -23,6 +23,7 @@ export type PostJsonOptions = {
   noJson?: boolean;
   /** When true, will return result as blob. Default: false */
   blob?: boolean;
+  method?: 'POST' | 'PUT';
 };
 
 export type Endpoint = string | ((args: { body: unknown }) => string);
@@ -39,7 +40,7 @@ export async function postJson<TBody, TResponse, TErr = unknown>(
     : url;
 
   const res = await fetch(fullUrl, {
-    method: 'POST',
+    method: options.method || 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers ?? {}),
