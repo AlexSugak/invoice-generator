@@ -23,7 +23,7 @@ export type PostJsonOptions = {
   noJson?: boolean;
   /** When true, will return result as blob. Default: false */
   blob?: boolean;
-  method?: 'POST' | 'PUT';
+  method?: 'POST' | 'PUT' | 'DELETE';
 };
 
 export type Endpoint = string | ((args: { body: unknown }) => string);

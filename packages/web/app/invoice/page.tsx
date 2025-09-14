@@ -2,11 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
-import { useDraftDetails } from './_lib/useDraftDetails';
+import { useDraftDetails, useSaveDraft } from '@/src/hooks/useDrafts';
 import { useSession } from 'next-auth/react';
-import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
 import { SaveDraftModal } from './_components/SaveDraftModal';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 
 const logger = getLogger('invoice editor');
 
@@ -422,7 +424,7 @@ function LineItems({
   return (
     <Section title="Item">
       <div className="space-y-4">
-        {invoice.items.map((item) => (
+        {(invoice.items || []).map((item) => (
           <LineItemRow
             key={item.id}
             item={item}
@@ -460,7 +462,7 @@ function SubTotal({
   );
 
   const subtotal = useMemo(
-    () => money(invoice.items.reduce((sum, i) => sum + i.quantity * i.rate, 0)),
+    () => money((invoice.items || []).reduce((sum, i) => sum + i.quantity * i.rate, 0)),
     [invoice.items],
   );
 
@@ -589,6 +591,10 @@ function Extras({
  * Root Page
  * ========================= */
 export default function InvoicePage() {
+  const searchParams = useSearchParams();
+  const draftParam = searchParams.get('draft');
+  const router = useRouter();
+
   const [invoice, setInvoice] = useState<Invoice>({
     invoiceNumber: '1',
     date: '',
@@ -607,6 +613,8 @@ export default function InvoicePage() {
     amountPaid: 0,
     currency: 'USD',
   });
+
+  const [currentDraftName, setCurrentDraftName] = useState<string | null>(draftParam);
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
@@ -645,9 +653,11 @@ export default function InvoicePage() {
   };
 
   const { data: session } = useSession();
-  const { data: savedDraft } = useDraftDetails({
+  const queryClient = useQueryClient();
+  const { data: loadedDraft } = useDraftDetails({
     userName: session?.user?.email || '',
-    enabled: !!session?.user?.email,
+    draftName: currentDraftName || '',
+    enabled: !!session?.user?.email && !!currentDraftName,
   });
 
   const [showDraftModal, setShowDraftModal] = useState(false);
@@ -655,39 +665,55 @@ export default function InvoicePage() {
 
   const { mutate: saveDraft, isPending: isSavingDraft } = useSaveDraft(session?.user?.email || '');
 
+  useEffect(() => {
+    if (loadedDraft?.params) {
+      const draftParams = loadedDraft.params as Partial<Invoice>;
+      setInvoice(prev => ({
+        ...prev,
+        ...draftParams,
+        items: draftParams.items || prev.items,
+      }));
+    }
+  }, [loadedDraft]);
+
   const handleSaveDraft = () => {
-    if (!draftName.trim()) return;
+    if (currentDraftName) {
+      const draftData = {
+        draftName: currentDraftName,
+        params: invoice
+      };
 
-    const draftData = {
-      draftName: draftName.trim(),
-      params: invoice
-    };
+      saveDraft(draftData, {
+        onSuccess: () => {
+          // Invalidate both draft list and specific draft details
+          queryClient.invalidateQueries({ queryKey: ['draftList', session?.user?.email] });
+          queryClient.invalidateQueries({ queryKey: ['draftDetails', session?.user?.email, currentDraftName] });
+          router.push('/drafts');
+        }
+      });
+    } else {
+      if (!draftName.trim()) return;
 
-    saveDraft(draftData, {
-      onSuccess: () => {
-        setShowDraftModal(false);
-        setDraftName('');
-      }
-    });
+      const draftData = {
+        draftName: draftName.trim(),
+        params: invoice
+      };
+
+      saveDraft(draftData, {
+        onSuccess: () => {
+          // Invalidate draft list for new draft
+          queryClient.invalidateQueries({ queryKey: ['draftList', session?.user?.email] });
+          setShowDraftModal(false);
+          setCurrentDraftName(draftName.trim());
+          setDraftName('');
+        }
+      });
+    }
   };
 
-  // logger.debug('draft', savedDraft);
-  // useEffect(() => {
-  //   logger.debug('setInvoice effect', { savedDraft });
-  //   const draft = JSON.parse((savedDraft as any as string) || '{}');
-  //   if (draft.params) {
-  //     logger.debug('setInvoice with ', draft.params);
-  //     setInvoice(draft.params as Invoice);
-  //   }
-  // }, [savedDraft]);
-  //
-  // const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     saveDraft(invoice);
-  //   }, 2000);
-  //   return () => clearInterval(interval);
-  // }, [invoice]);
+  const handleSaveAsNewDraft = () => {
+    setShowDraftModal(true);
+  };
 
   if (isError) {
     console.error('failed to generate PDF', error);
@@ -695,6 +721,17 @@ export default function InvoicePage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
+      {currentDraftName && (
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-600 text-sm font-medium">Editing Draft:</span>
+              <span className="text-blue-800 font-semibold">{currentDraftName}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
         <Addresses invoice={invoice} setInvoice={setInvoice} />
@@ -714,13 +751,23 @@ export default function InvoicePage() {
       </div>
 
       <div className="pt-2 w-full flex justify-end gap-3">
-        <button
-          className="cursor-pointer inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-5 py-3 text-base font-medium text-gray-700 hover:bg-gray-50"
-          onClick={() => setShowDraftModal(true)}
-          disabled={isSavingDraft}
-        >
-          Save as Draft
-        </button>
+        {currentDraftName ? (
+          <button
+            className="cursor-pointer inline-flex items-center justify-center rounded-md border border-emerald-600 bg-emerald-50 px-5 py-3 text-base font-medium text-emerald-700 hover:bg-emerald-100"
+            onClick={handleSaveDraft}
+            disabled={isSavingDraft}
+          >
+            {isSavingDraft ? 'Saving...' : 'Save Draft'}
+          </button>
+        ) : (
+          <button
+            className="cursor-pointer inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-5 py-3 text-base font-medium text-gray-700 hover:bg-gray-50"
+            onClick={handleSaveAsNewDraft}
+            disabled={isSavingDraft}
+          >
+            Save as Draft
+          </button>
+        )}
         <button
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
           onClick={handleGeneratePdf}
