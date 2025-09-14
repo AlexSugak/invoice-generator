@@ -50,13 +50,13 @@ export class DraftService {
   }
 
   async getDrafts(userName: string): Promise<string[]> {
-    const res = await sql<Array<{ name: string }>>`
+    const res = await sql<Array<{ id: number; name: string }>>`
         SELECT name 
         FROM user_drafts 
         WHERE userName = ${userName} 
     `;
 
-    // TODO Handle empty names
-    return (res || []).map(({ name }) => name);
+    // Using id as fallback in case of empty name
+    return (res || []).map(({ id, name }) => name || `Draft ${id}`);
   }
 }
