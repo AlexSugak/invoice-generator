@@ -48,4 +48,15 @@ export class DraftService {
 
     return { userName, name: draftName, params: JSON.parse(params) as object };
   }
+
+  async getDrafts(userName: string): Promise<string[]> {
+    const res = await sql<Array<{ name: string }>>`
+        SELECT name 
+        FROM user_drafts 
+        WHERE userName = ${userName} 
+    `;
+
+    // TODO Handle empty names
+    return (res || []).map(({ name }) => name);
+  }
 }

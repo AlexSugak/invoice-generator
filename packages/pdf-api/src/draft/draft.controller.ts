@@ -67,6 +67,15 @@ export class DraftController {
     });
   }
 
+  @Get('users/:userName/drafts')
+  public async getDrafts(@Param('userName') userName: string) {
+    logger.debug('getDrafts', userName);
+
+    const drafts = await this.draftService.getDrafts(userName);
+
+    return { drafts };
+  }
+
   @Get('users/:userName/drafts/:draftName')
   public async getDraft(
     @Param('draftName') draftName: string,
