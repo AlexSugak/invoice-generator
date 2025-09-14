@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { RequireApiKey } from '../decorators/require-api-key.decorator';
 import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { getLogger } from '@invoice/common';
+import { getLogger, Invoice } from '@invoice/common';
 import { DraftDetails, DraftService } from './draft.service';
 
 const logger = getLogger('DraftController');
@@ -18,14 +18,56 @@ const logger = getLogger('DraftController');
 export class DraftController {
   constructor(private readonly draftService: DraftService) {}
 
-  @Put('users/:userName/drafts/:draftName')
+  @Put('users/:userName/drafts/create')
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Saves user template draft',
+    summary: 'Creates user template draft',
   })
   @ApiParam({
-    name: 'draftName',
-    description: 'Name of the draft',
+    name: 'userName',
+    description: 'Name of the user',
+    required: true,
+    schema: { type: 'string' },
+  })
+  @ApiBody({
+    description:
+      'Arbitrary JSON draft parameters. This can be any JSON object.',
+    required: true,
+    schema: {
+      type: 'object',
+      additionalProperties: true, // allow any shape
+      example: {
+        invoiceName: 'Invoice 123',
+        invoiceNumber: '123',
+        date: '2025-09-10',
+        from: { name: 'Acme Inc.' },
+        billTo: { name: 'Client LLC' },
+        items: [{ description: 'Design work', quantity: 10, rate: 50 }],
+        taxPercent: 19,
+        currency: 'USD',
+      },
+    },
+  })
+  public async createDraft(
+    @Param('draftName') draftName: string,
+    @Param('userName') userName: string,
+    @Body() invoiceData: Invoice,
+  ) {
+    logger.debug('createDraft', { draftName, userName });
+    await this.draftService.createDraft({
+      userName,
+      invoiceData,
+    });
+  }
+
+  @Put('users/:userName/drafts/:draftId')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Edits user template draft',
+  })
+  @ApiParam({
+    name: 'draftId',
+    description: 'Id of the draft',
     required: true,
     schema: { type: 'string' },
   })
@@ -54,16 +96,16 @@ export class DraftController {
       },
     },
   })
-  public async saveDraft(
-    @Param('draftName') draftName: string,
+  public async editDraft(
+    @Param('draftId') draftId: number,
     @Param('userName') userName: string,
-    @Body() draftParams: object,
+    @Body() invoiceData: Invoice,
   ) {
-    logger.debug('saveDraft', { draftName, userName });
-    await this.draftService.saveDraft({
+    logger.debug('edit', { draftId, userName });
+    await this.draftService.editDraft({
       userName,
-      draftName,
-      params: draftParams,
+      draftId,
+      invoiceData,
     });
   }
 
@@ -76,16 +118,16 @@ export class DraftController {
     return drafts;
   }
 
-  @Get('users/:userName/drafts/:draftName')
+  @Get('users/:userName/drafts/:draftId')
   public async getDraft(
-    @Param('draftName') draftName: string,
+    @Param('draftId') draftId: number,
     @Param('userName') userName: string,
   ): Promise<DraftDetails> {
-    logger.debug('getDraft', { draftName, userName });
+    logger.debug('getDraft', { draftId, userName });
 
     const draftDetails = await this.draftService.getDraft({
       userName,
-      draftName,
+      draftId,
     });
 
     if (!draftDetails) {

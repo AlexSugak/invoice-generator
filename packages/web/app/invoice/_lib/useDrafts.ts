@@ -1,4 +1,5 @@
 import { useGetQuery } from "@/src/lib/useGetQuery";
+import { DraftsListItem } from "@invoice/common";
 
 const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 if (!apiKey) {
@@ -12,7 +13,7 @@ export function useDrafts({
   userName: string;
   enabled: boolean;
 }) {
-    const query = useGetQuery<string[]>(
+    const query = useGetQuery<DraftsListItem[]>(
         {
           endpoint: `/api/users/${userName}/drafts`,
           requestOptions: {

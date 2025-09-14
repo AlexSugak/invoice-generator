@@ -11,11 +11,11 @@ if (!apiKey) {
 
 export function useDraftDetails({
   userName,
-  invoiceName,
+  draftId,
   enabled,
 }: {
   userName: string;
-  invoiceName: string;
+  draftId?: number;
   enabled: boolean;
 }) {
   const query = useGetQuery<
@@ -23,7 +23,7 @@ export function useDraftDetails({
     Blob
   >(
     {
-      endpoint: `/api/users/${userName}/drafts/${invoiceName}`,
+      endpoint: `/api/users/${userName}/drafts/${draftId}`,
       requestOptions: {
         noJson: true,
         headers: {

@@ -4,57 +4,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
-import { useSaveDraft } from './_lib/useSaveDraft';
-import { getLogger } from '@invoice/common';
+import { Address, getLogger, Invoice, LineItem } from '@invoice/common';
 import { useDrafts } from './_lib/useDrafts';
+import { useCreateDraft } from './_lib/useCreateDraft';
+import { useEditDraft } from './_lib/useEditDraft';
 
 const logger = getLogger('invoice editor');
-
-/* =========================
- * Types
- * ========================= */
-type Address = {
-  name: string;
-  line1?: string;
-  line2?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-  email?: string;
-  phone?: string;
-};
-
-type LineItem = {
-  id: string;
-  description: string;
-  quantity: number;
-  rate: number; // price per unit
-};
-
-type Invoice = {
-  invoiceName: string;
-  invoiceNumber: string;
-  date?: string;
-  paymentTerms?: string;
-  dueDate?: string;
-  poNumber?: string;
-
-  from: Address;
-  billTo: Address;
-  shipTo: Address;
-
-  items: LineItem[];
-
-  notes?: string;
-  terms?: string;
-
-  taxPercent: number; // e.g. 19 for 19%
-  discount: number; // flat amount
-  shipping: number; // flat amount
-  amountPaid: number; // already paid
-  currency: string;
-};
 
 /* =========================
  * Helpers
@@ -603,7 +558,7 @@ function Extras({
  * Root Page
  * ========================= */
 export default function InvoicePage() {
-  const [currentInvoiceName, setCurrentInvoiceName] = useState<string>();
+  const [currentInvoiceId, setCurrentInvoiceId] = useState<number>();
   const [invoice, setInvoice] = useState<Invoice>({
     invoiceName: 'Invoice 1',
     invoiceNumber: '1',
@@ -667,8 +622,8 @@ export default function InvoicePage() {
   });
   const { data: savedDraft } = useDraftDetails({
     userName: session?.user?.email || '',
-    invoiceName: invoice.invoiceName,
-    enabled: !!session?.user?.email && !!currentInvoiceName,
+    draftId: currentInvoiceId,
+    enabled: !!session?.user?.email && !!currentInvoiceId,
   });
 
   // logger.debug('draft', savedDraft);
@@ -682,9 +637,17 @@ export default function InvoicePage() {
   }, [savedDraft]);
 
   const {
-    mutate: saveDraft,
-    isPending: isSaveDraftPending,
-  } = useSaveDraft(session?.user?.email || '', invoice.invoiceName);
+    mutate: createDraft,
+    isPending: isCreateDraftPending,
+  } = useCreateDraft(session?.user?.email || '');
+
+  const {
+    mutate: editDraft,
+    isPending: isEditDraftPending,
+  } = useEditDraft({
+    userName: session?.user?.email || '',
+    draftId: currentInvoiceId as number
+  });
 
   if (isError) {
     console.error('failed to generate PDF', error);
@@ -697,9 +660,11 @@ export default function InvoicePage() {
         {!!drafts?.length
           ? (
             <ul>
-              {drafts?.map(draftName => (
-                <li key={draftName}>
-                  <button className="cursor-pointer" onClick={() => setCurrentInvoiceName(draftName)}>{draftName}</button>
+              {drafts?.map(({ id, name }) => (
+                <li key={id}>
+                  <button className="cursor-pointer" onClick={() => setCurrentInvoiceId(id)}>
+                    {name}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -728,8 +693,14 @@ export default function InvoicePage() {
         <div className="pt-2 w-full flex justify-end gap-2">
           <button
             className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
-            onClick={() => saveDraft(invoice)}
-            disabled={isSaveDraftPending}
+            onClick={() => {
+              if (currentInvoiceId) {
+                editDraft(invoice)
+              } else {
+                createDraft(invoice);
+              }
+            }}
+            disabled={isCreateDraftPending || isEditDraftPending}
           >
             Save invoice draft
           </button>
