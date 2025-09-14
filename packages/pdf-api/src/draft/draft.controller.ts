@@ -43,6 +43,7 @@ export class DraftController {
       type: 'object',
       additionalProperties: true, // allow any shape
       example: {
+        invoiceName: 'Invoice 123',
         invoiceNumber: '123',
         date: '2025-09-10',
         from: { name: 'Acme Inc.' },
