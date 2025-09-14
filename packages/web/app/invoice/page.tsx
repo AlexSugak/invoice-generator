@@ -32,6 +32,7 @@ type LineItem = {
 };
 
 type Invoice = {
+  invoiceName: string;
   invoiceNumber: string;
   date?: string;
   paymentTerms?: string;
@@ -162,6 +163,19 @@ function InvoiceHeader({
 }) {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {/* Invoide name */}
+      <div className="col-span-2 md:col-span-2">
+        <Input
+          label="Invoice name"
+          name="invoiceName"
+          value={invoice.invoiceName}
+          onChange={(e) =>
+            setInvoice((v) => ({ ...v, invoiceName: e.target.value }))
+          }
+          className="w-40"
+        />
+      </div>
+
       {/* Big 'INVOICE' + number */}
       <div className="col-span-2 md:col-span-2">
         <div className="flex items-start">
@@ -589,6 +603,7 @@ function Extras({
  * ========================= */
 export default function InvoicePage() {
   const [invoice, setInvoice] = useState<Invoice>({
+    invoiceName: 'Invoice 1',
     invoiceNumber: '1',
     date: '',
     paymentTerms: '',
