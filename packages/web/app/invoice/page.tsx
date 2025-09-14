@@ -661,6 +661,7 @@ export default function InvoicePage() {
   const { data: session } = useSession();
   const { data: savedDraft } = useDraftDetails({
     userName: session?.user?.email || '',
+    invoiceName: invoice.invoiceName,
     enabled: !!session?.user?.email,
   });
 
@@ -674,13 +675,7 @@ export default function InvoicePage() {
     }
   }, [savedDraft]);
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
+  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '', invoice.invoiceName);
 
   if (isError) {
     console.error('failed to generate PDF', error);
@@ -706,7 +701,14 @@ export default function InvoicePage() {
         </div>
       </div>
 
-      <div className="pt-2 w-full flex justify-end">
+      <div className="pt-2 w-full flex justify-end gap-2">
+        <button
+          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
+          onClick={() => saveDraft(invoice)}
+          disabled={isPending}
+        >
+          Save invoice draft
+        </button>
         <button
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
           onClick={handleGeneratePdf}
