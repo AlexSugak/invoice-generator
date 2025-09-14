@@ -6,6 +6,7 @@ import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
 import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
+import { SaveDraftModal } from './_components/SaveDraftModal';
 
 const logger = getLogger('invoice editor');
 
@@ -649,23 +650,44 @@ export default function InvoicePage() {
     enabled: !!session?.user?.email,
   });
 
-  // logger.debug('draft', savedDraft);
-  useEffect(() => {
-    logger.debug('setInvoice effect', { savedDraft });
-    const draft = JSON.parse((savedDraft as any as string) || '{}');
-    if (draft.params) {
-      logger.debug('setInvoice with ', draft.params);
-      setInvoice(draft.params as Invoice);
-    }
-  }, [savedDraft]);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [draftName, setDraftName] = useState('');
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
+  const { mutate: saveDraft, isPending: isSavingDraft } = useSaveDraft(session?.user?.email || '');
+
+  const handleSaveDraft = () => {
+    if (!draftName.trim()) return;
+
+    const draftData = {
+      draftName: draftName.trim(),
+      params: invoice
+    };
+
+    saveDraft(draftData, {
+      onSuccess: () => {
+        setShowDraftModal(false);
+        setDraftName('');
+      }
+    });
+  };
+
+  // logger.debug('draft', savedDraft);
+  // useEffect(() => {
+  //   logger.debug('setInvoice effect', { savedDraft });
+  //   const draft = JSON.parse((savedDraft as any as string) || '{}');
+  //   if (draft.params) {
+  //     logger.debug('setInvoice with ', draft.params);
+  //     setInvoice(draft.params as Invoice);
+  //   }
+  // }, [savedDraft]);
+  //
+  // const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     saveDraft(invoice);
+  //   }, 2000);
+  //   return () => clearInterval(interval);
+  // }, [invoice]);
 
   if (isError) {
     console.error('failed to generate PDF', error);
@@ -691,7 +713,14 @@ export default function InvoicePage() {
         </div>
       </div>
 
-      <div className="pt-2 w-full flex justify-end">
+      <div className="pt-2 w-full flex justify-end gap-3">
+        <button
+          className="cursor-pointer inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-5 py-3 text-base font-medium text-gray-700 hover:bg-gray-50"
+          onClick={() => setShowDraftModal(true)}
+          disabled={isSavingDraft}
+        >
+          Save as Draft
+        </button>
         <button
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
           onClick={handleGeneratePdf}
@@ -700,6 +729,18 @@ export default function InvoicePage() {
           Create Invoice PDF
         </button>
       </div>
+
+      <SaveDraftModal
+        isOpen={showDraftModal}
+        draftName={draftName}
+        onDraftNameChange={setDraftName}
+        onSave={handleSaveDraft}
+        onCancel={() => {
+          setShowDraftModal(false);
+          setDraftName('');
+        }}
+        isSaving={isSavingDraft}
+      />
     </main>
   );
 }

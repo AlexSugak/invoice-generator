@@ -10,10 +10,10 @@ if (!apiKey) {
 }
 
 export function useSaveDraft(userName: string) {
-  return usePostMutation<Record<string, any>, Blob>({
-    endpoint: `/api/users/${userName}/drafts/invoice-draft`,
+  return usePostMutation<{ draftName: string; params: Record<string, any> }, Blob>({
+    endpoint: ({ body }) => `/api/users/${userName}/drafts/${(body as { draftName: string }).draftName}`,
     requestOptions: {
-      // baseUrl,
+      baseUrl,
       noJson: true,
       blob: true,
       method: 'PUT',
