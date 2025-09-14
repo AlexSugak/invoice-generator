@@ -6,6 +6,7 @@ import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
 import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
+import { useDrafts } from './_lib/useDrafts';
 
 const logger = getLogger('invoice editor');
 
@@ -602,6 +603,7 @@ function Extras({
  * Root Page
  * ========================= */
 export default function InvoicePage() {
+  const [currentInvoiceName, setCurrentInvoiceName] = useState<string>();
   const [invoice, setInvoice] = useState<Invoice>({
     invoiceName: 'Invoice 1',
     invoiceNumber: '1',
@@ -639,7 +641,7 @@ export default function InvoicePage() {
 
   const {
     mutate: generatePdf,
-    isPending,
+    isPending: isGeneratePdfPending,
     isError,
     error,
   } = useGenerateInvoicePdf();
@@ -659,10 +661,14 @@ export default function InvoicePage() {
   };
 
   const { data: session } = useSession();
+  const { data: drafts } = useDrafts({
+    userName: session?.user?.email || '',
+    enabled: !!session?.user?.email,
+  });
   const { data: savedDraft } = useDraftDetails({
     userName: session?.user?.email || '',
     invoiceName: invoice.invoiceName,
-    enabled: !!session?.user?.email,
+    enabled: !!session?.user?.email && !!currentInvoiceName,
   });
 
   // logger.debug('draft', savedDraft);
@@ -675,48 +681,67 @@ export default function InvoicePage() {
     }
   }, [savedDraft]);
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '', invoice.invoiceName);
+  const {
+    mutate: saveDraft,
+    isPending: isSaveDraftPending,
+  } = useSaveDraft(session?.user?.email || '', invoice.invoiceName);
 
   if (isError) {
     console.error('failed to generate PDF', error);
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
-        <Addresses invoice={invoice} setInvoice={setInvoice} />
-        <LineItems invoice={invoice} setInvoice={setInvoice} />
+    <>
+      <aside className="w-100 px-4 py-8">
+        <h2 className="text-2xl font-semibold tracking-wide">Drafts</h2>
+        {!!drafts?.length
+          ? (
+            <ul>
+              {drafts?.map(draftName => (
+                <li key={draftName}>
+                  <button className="cursor-pointer" onClick={() => setCurrentInvoiceName(draftName)}>{draftName}</button>
+                </li>
+              ))}
+            </ul>
+          )
+          : 'No saved drafts'}
+      </aside>
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
+          <Addresses invoice={invoice} setInvoice={setInvoice} />
+          <LineItems invoice={invoice} setInvoice={setInvoice} />
 
-        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Extras invoice={invoice} setInvoice={setInvoice} />
-          <div className="md:col-start-2">
-            <SubTotal invoice={invoice} setInvoice={setInvoice} />
-            <div className="mt-3 text-right text-xs text-gray-500">
-              Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
-              {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
-              Balance Due: {fmt.format(totals.balance)}
+          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Extras invoice={invoice} setInvoice={setInvoice} />
+            <div className="md:col-start-2">
+              <SubTotal invoice={invoice} setInvoice={setInvoice} />
+              <div className="mt-3 text-right text-xs text-gray-500">
+                Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
+                {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
+                Balance Due: {fmt.format(totals.balance)}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="pt-2 w-full flex justify-end gap-2">
-        <button
-          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
-          onClick={() => saveDraft(invoice)}
-          disabled={isPending}
-        >
-          Save invoice draft
-        </button>
-        <button
-          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
-          onClick={handleGeneratePdf}
-          disabled={isPending}
-        >
-          Create Invoice PDF
-        </button>
-      </div>
-    </main>
+        <div className="pt-2 w-full flex justify-end gap-2">
+          <button
+            className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
+            onClick={() => saveDraft(invoice)}
+            disabled={isSaveDraftPending}
+          >
+            Save invoice draft
+          </button>
+          <button
+            className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
+            onClick={handleGeneratePdf}
+            disabled={isGeneratePdfPending}
+          >
+            Create Invoice PDF
+          </button>
+        </div>
+      </main>
+    </>
   );
 }

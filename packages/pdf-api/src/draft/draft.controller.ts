@@ -73,7 +73,7 @@ export class DraftController {
 
     const drafts = await this.draftService.getDrafts(userName);
 
-    return { drafts };
+    return drafts;
   }
 
   @Get('users/:userName/drafts/:draftName')
