@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
@@ -554,13 +554,9 @@ function Extras({
   );
 }
 
-/* =========================
- * Root Page
- * ========================= */
-export default function InvoicePage() {
-  const [currentInvoiceId, setCurrentInvoiceId] = useState<number>();
-  const [invoice, setInvoice] = useState<Invoice>({
-    invoiceName: 'Invoice 1',
+function getDefaultInvoiceData() {
+  return {
+    invoiceName: `Invoice ${new Date().toISOString()}`,
     invoiceNumber: '1',
     date: '',
     paymentTerms: '',
@@ -577,7 +573,15 @@ export default function InvoicePage() {
     shipping: 0,
     amountPaid: 0,
     currency: 'USD',
-  });
+  };
+}
+
+/* =========================
+ * Root Page
+ * ========================= */
+export default function InvoicePage() {
+  const [currentInvoiceId, setCurrentInvoiceId] = useState<number>();
+  const [invoice, setInvoice] = useState<Invoice>(getDefaultInvoiceData());
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
@@ -616,11 +620,11 @@ export default function InvoicePage() {
   };
 
   const { data: session } = useSession();
-  const { data: drafts } = useDrafts({
+  const { data: drafts, isLoading: isLoadingDrafts } = useDrafts({
     userName: session?.user?.email || '',
     enabled: !!session?.user?.email,
   });
-  const { data: savedDraft } = useDraftDetails({
+  const { data: savedDraft, isLoading: isLoadingDraftDetails } = useDraftDetails({
     userName: session?.user?.email || '',
     draftId: currentInvoiceId,
     enabled: !!session?.user?.email && !!currentInvoiceId,
@@ -655,39 +659,60 @@ export default function InvoicePage() {
 
   return (
     <>
-      <aside className="w-100 px-4 py-8">
+      <aside className="w-150 px-4 py-8">
         <h2 className="text-2xl font-semibold tracking-wide">Drafts</h2>
-        {!!drafts?.length
-          ? (
-            <ul>
-              {drafts?.map(({ id, name }) => (
-                <li key={id}>
-                  <button className="cursor-pointer" onClick={() => setCurrentInvoiceId(id)}>
-                    {name}
-                  </button>
-                </li>
-              ))}
-            </ul>
+        {isLoadingDrafts
+          ? 'Loading...'
+          : (
+            !!drafts?.length
+              ? (
+                <ul>
+                  {drafts?.map(({ id, name }) => (
+                    <li key={id}>
+                      <button
+                        className="cursor-pointer"
+                        onClick={() => setCurrentInvoiceId(id)}
+                      >
+                        {name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
+              : 'No saved drafts'
           )
-          : 'No saved drafts'}
+        }
+        <button
+          className="mt-4 cursor-pointer"
+          onClick={() => {
+            setCurrentInvoiceId(undefined);
+            setInvoice(getDefaultInvoiceData());
+          }}
+        >Створити</button>
       </aside>
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
-          <Addresses invoice={invoice} setInvoice={setInvoice} />
-          <LineItems invoice={invoice} setInvoice={setInvoice} />
+          {isLoadingDraftDetails
+            ? 'Loading...'
+            : (
+              <>
+                <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
+                <Addresses invoice={invoice} setInvoice={setInvoice} />
+                <LineItems invoice={invoice} setInvoice={setInvoice} />
 
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-            <Extras invoice={invoice} setInvoice={setInvoice} />
-            <div className="md:col-start-2">
-              <SubTotal invoice={invoice} setInvoice={setInvoice} />
-              <div className="mt-3 text-right text-xs text-gray-500">
-                Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
-                {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
-                Balance Due: {fmt.format(totals.balance)}
-              </div>
-            </div>
-          </div>
+                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <Extras invoice={invoice} setInvoice={setInvoice} />
+                  <div className="md:col-start-2">
+                    <SubTotal invoice={invoice} setInvoice={setInvoice} />
+                    <div className="mt-3 text-right text-xs text-gray-500">
+                      Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
+                      {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
+                      Balance Due: {fmt.format(totals.balance)}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
         </div>
 
         <div className="pt-2 w-full flex justify-end gap-2">
@@ -700,7 +725,7 @@ export default function InvoicePage() {
                 createDraft(invoice);
               }
             }}
-            disabled={isCreateDraftPending || isEditDraftPending}
+            disabled={isLoadingDraftDetails || isCreateDraftPending || isEditDraftPending}
           >
             Save invoice draft
           </button>
