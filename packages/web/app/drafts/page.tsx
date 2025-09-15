@@ -130,8 +130,6 @@ export default function DraftsPage() {
 
   console.log('DRAFTS', {drafts, userEmail})
 
-  
-
   if (!userEmail) return <SignedOutState />;
   if (isLoading) return <LoadingList />;
   if (error) return <ErrorState />;

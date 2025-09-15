@@ -118,6 +118,14 @@ export default function InvoicePage() {
     draftName,
   });
 
+  const saveDraftAndReplaceUrl = (invoice: Invoice) => {
+    saveDraft(invoice);
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('draft', draftName);
+    const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+  }
+
   useEffect(() => {
     return () =>  saveDraft(invoice);;
   }, [invoice]);
@@ -139,7 +147,7 @@ export default function InvoicePage() {
 
         <button
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-2 py-1 text-base font-semibold text-white hover:bg-emerald-700"
-          onClick={() => saveDraft(invoice)}
+          onClick={() => saveDraftAndReplaceUrl(invoice)}
           disabled={isPending}
         >
           Save Invoice Draft as: {draftName}
