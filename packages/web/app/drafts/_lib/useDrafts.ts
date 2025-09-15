@@ -18,7 +18,7 @@ export function useDrafts({
     Array<{ userName: string; name: string; params: Record<string, any> }>
   >(
     {
-      endpoint: `${baseUrl}/api/users/${userName}/drafts`,
+      endpoint: `/api/users/${userName}/drafts`,
       requestOptions: {
         headers: {
           'X-API-Key': apiKey,
