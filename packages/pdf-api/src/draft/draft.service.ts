@@ -48,4 +48,21 @@ export class DraftService {
 
     return { userName, name: draftName, params: JSON.parse(params) as object };
   }
+
+  async getAllDrafts({
+    userName,
+  }: {
+    userName: string;
+  }): Promise<{ name: string }[]> {
+    const res = await sql<Array<{ name: string }>>`
+    SELECT name
+    FROM user_drafts
+    WHERE userName = ${userName}
+  `;
+
+    if (!res || res.length === 0) {
+      return [];
+    }
+    return res;
+  }
 }
