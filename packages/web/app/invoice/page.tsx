@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
@@ -128,7 +128,7 @@ function InvoiceHeader({
           onChange={(e) =>
             setInvoice((v) => ({ ...v, invoiceName: e.target.value }))
           }
-          className="w-40"
+          className="w-120"
         />
       </div>
 
@@ -670,7 +670,9 @@ export default function InvoicePage() {
                   {drafts?.map(({ id, name }) => (
                     <li key={id}>
                       <button
-                        className="cursor-pointer"
+                        className={
+                          `cursor-pointer ${id === currentInvoiceId ? 'font-semibold underline' : ''}`
+                        }
                         onClick={() => setCurrentInvoiceId(id)}
                       >
                         {name}

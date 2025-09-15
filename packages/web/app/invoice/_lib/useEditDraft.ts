@@ -1,4 +1,5 @@
 import { usePostMutation } from '@/src/lib/usePostMutation';
+import { InvalidateQueryFilters, useQueryClient } from '@tanstack/react-query';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
 if (!baseUrl) {
@@ -16,6 +17,7 @@ export function useEditDraft({
   userName: string;
   draftId: number;
 }) {
+  const queryClient = useQueryClient();
   return usePostMutation<Record<string, any>, Blob>({
     endpoint: `/api/users/${userName}/drafts/${draftId}`,
     requestOptions: {
@@ -29,5 +31,15 @@ export function useEditDraft({
       },
       fetchInit: {},
     },
+  },
+  {
+    onSuccess: () => {
+      queryClient.invalidateQueries(
+        ['get', `/api/users/${userName}/drafts`] as InvalidateQueryFilters
+      );
+      queryClient.invalidateQueries(
+        ['get', `/api/users/${userName}/drafts/${draftId}`] as InvalidateQueryFilters
+      );
+    }
   });
 }
