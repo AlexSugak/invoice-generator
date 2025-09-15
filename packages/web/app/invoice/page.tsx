@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
-import { useDraftDetails } from './_lib/useDraftDetails';
+import { useDeleteDraft, useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
 import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
+import { useDraftsList } from './_lib/useDraftsList';
 
 const logger = getLogger('invoice editor');
 
@@ -170,7 +172,7 @@ function InvoiceHeader({
             <Input
               name="invoiceNumber"
               prefix="#"
-              value={invoice.invoiceNumber}
+              value={invoice.invoiceNumber || ''}
               onChange={(e) =>
                 setInvoice((v) => ({ ...v, invoiceNumber: e.target.value }))
               }
@@ -239,7 +241,7 @@ function AddressFields({
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Input
           placeholder={placeholderName ?? 'Name / Company'}
-          value={value.name}
+          value={value.name || ''}
           onChange={(e) => onChange({ ...value, name: e.target.value })}
           hint={optionalNote}
         />
@@ -341,7 +343,7 @@ function LineItemRow({
       <div className="col-span-12 md:col-span-6">
         <Input
           placeholder="Description of item/service..."
-          value={item.description}
+          value={item.description || ''}
           label="Description"
           onChange={(e) => onChange({ ...item, description: e.target.value })}
         />
@@ -587,30 +589,32 @@ function Extras({
 /* =========================
  * Root Page
  * ========================= */
+const initialInvoice: Invoice = {
+  invoiceNumber: String(Date.now()),
+  date: '',
+  paymentTerms: '',
+  dueDate: '',
+  poNumber: '',
+  from: { name: '' },
+  billTo: { name: '' },
+  shipTo: { name: '' },
+  items: [{ id: crypto.randomUUID(), description: '', quantity: 1, rate: 0 }],
+  notes: '',
+  terms: '',
+  taxPercent: 0,
+  discount: 0,
+  shipping: 0,
+  amountPaid: 0,
+  currency: 'USD',
+};
+
 export default function InvoicePage() {
-  const [invoice, setInvoice] = useState<Invoice>({
-    invoiceNumber: '1',
-    date: '',
-    paymentTerms: '',
-    dueDate: '',
-    poNumber: '',
-    from: { name: '' },
-    billTo: { name: '' },
-    shipTo: { name: '' },
-    items: [{ id: crypto.randomUUID(), description: '', quantity: 1, rate: 0 }],
-    notes: '',
-    terms: '',
-    taxPercent: 0,
-    discount: 0,
-    shipping: 0,
-    amountPaid: 0,
-    currency: 'USD',
-  });
+  const [invoice, setInvoice] = useState<Invoice>(initialInvoice);
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
     const subtotal = money(
-      invoice.items.reduce((s, i) => s + i.quantity * i.rate, 0),
+      invoice.items?.reduce((s, i) => s + i.quantity * i.rate, 0),
     );
     const tax = money((subtotal * (invoice.taxPercent || 0)) / 100);
     const total = money(
@@ -642,30 +646,68 @@ export default function InvoicePage() {
       },
     });
   };
-
+  
   const { data: session } = useSession();
-  const { data: savedDraft } = useDraftDetails({
-    userName: session?.user?.email || '',
-    enabled: !!session?.user?.email,
-  });
-
-  // logger.debug('draft', savedDraft);
-  useEffect(() => {
-    logger.debug('setInvoice effect', { savedDraft });
-    const draft = JSON.parse((savedDraft as any as string) || '{}');
-    if (draft.params) {
-      logger.debug('setInvoice with ', draft.params);
-      setInvoice(draft.params as Invoice);
+  const queryClient = useQueryClient();
+  const userName = session?.user?.email || '';
+  
+  const [draftName, setDraftName] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedDraft, setSelectedDraft] = useState('');
+  const { data: draftsList } = useDraftsList(userName);
+  const { mutate: saveDraft } = useSaveDraft(userName, draftName);
+  const { mutate: deleteDraft, isPending: isDeleting } = useDeleteDraft(userName, selectedDraft);
+  
+  const handleSelectDraft = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    if (event.target.value === 'new') {
+      setInvoice(initialInvoice);
+      setSelectedDraft('');
+    } else {
+      setSelectedDraft(event.target.value);
     }
-  }, [savedDraft]);
+  };
+  
+  const handleDeleteDraft = () => {
+    logger.info(`Delete draft: ${selectedDraft}`);
+    if (selectedDraft) {
+      deleteDraft(undefined, {
+        onSuccess: () => {
+          // Invalidate the drafts list query to refetch after deletion
+          queryClient.invalidateQueries({ queryKey: ['get', `/api/users/${userName}/drafts`] });
+          setSelectedDraft('');
+        }
+      });
+    }
+    setShowModal(false);
+    setInvoice(initialInvoice);
+  };
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
+
+
+  const handleSaveDraft = () => {
+    setShowModal(false);
+    if (draftName) {
+      saveDraft(invoice, {
+        onSuccess: () => {
+          // Invalidate the drafts list query to refetch after saving
+          queryClient.invalidateQueries({ queryKey: ['get', `/api/users/${userName}/drafts`] });
+          setSelectedDraft(draftName);
+        },
+      });
+    }
+  };
+
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
+    if (selectedDraft) {
+      const selectedInvoice = draftsList?.find((item) => item.name === selectedDraft);
+      if (selectedInvoice?.params) {
+        setInvoice(selectedInvoice.params as Invoice);
+      } else {
+         setInvoice(invoice);
+      }
+    }
+  }, [selectedDraft]);
 
   if (isError) {
     console.error('failed to generate PDF', error);
@@ -673,6 +715,25 @@ export default function InvoicePage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
+      <div className="max-w-sm mb-3">
+        <label htmlFor="options" className="block mb-2 text-sm font-medium text-gray-700">
+          Choose draft:
+        </label>
+        <select
+          id="options"
+          value={selectedDraft}
+          onChange={handleSelectDraft}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">--Choose --</option>
+          <option value="new">--New draft--</option>
+          {draftsList?.map((item: { name: string }) => (
+            <option value={item.name} key={item.name}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
         <Addresses invoice={invoice} setInvoice={setInvoice} />
@@ -693,6 +754,16 @@ export default function InvoicePage() {
 
       <div className="pt-2 w-full flex justify-end">
         <button
+          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700 mr-3"
+          onClick={() => {
+            setShowModal(true);
+            setDraftName(selectedDraft || '');
+          }}
+        >
+          Save/Edit current draft
+        </button>
+        
+        <button
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
           onClick={handleGeneratePdf}
           disabled={isPending}
@@ -700,6 +771,42 @@ export default function InvoicePage() {
           Create Invoice PDF
         </button>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-gray-800/60">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <Input
+              name="draftName"
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              className="w-full "
+              placeholder='Type draft name here...'
+            />
+            <div className="flex justify-end space-x-3 pt-2">
+              <button
+                className="px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600 disabled:opacity-50"
+                onClick={handleDeleteDraft}
+                disabled={!selectedDraft || isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete draft'}
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 "
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="px-4 py-2 bg-emerald-500 text-white font-semibold rounded hover:bg-emerald-600"
+                onClick={handleSaveDraft}
+              >
+                Save draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
