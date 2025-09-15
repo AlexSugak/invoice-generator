@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   NotFoundException,
@@ -83,5 +84,45 @@ export class DraftController {
     }
 
     return draftDetails;
+  }
+
+  @Get('users/:userName/drafts/')
+  public async getDrafts(
+    @Param('userName') userName: string,
+  ): Promise<DraftDetails[]> {
+    logger.debug('getDraftsList', { userName });
+
+    const drafts = await this.draftServie.getDrafts(userName);
+
+    return drafts;
+  }
+
+  @Delete('users/:userName/drafts/:draftName')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Deletes user template draft',
+  })
+  @ApiParam({
+    name: 'draftName',
+    description: 'Name of the draft',
+    required: true,
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'userName',
+    description: 'Name of the user',
+    required: true,
+    schema: { type: 'string' },
+  })
+  public async deleteDraft(
+    @Param('draftName') draftName: string,
+    @Param('userName') userName: string,
+  ) {
+    logger.debug('deleteDraft', { draftName, userName });
+
+    await this.draftServie.deleteDraft({
+      userName,
+      draftName,
+    });
   }
 }

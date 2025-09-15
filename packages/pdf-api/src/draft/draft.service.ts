@@ -48,4 +48,38 @@ export class DraftService {
 
     return { userName, name: draftName, params: JSON.parse(params) as object };
   }
+
+  async getDrafts(userName: string): Promise<DraftDetails[]> {
+    const res = await sql<
+      Array<{ userName: string; name: string; params: string }>
+    >`
+        SELECT name, params 
+        FROM user_drafts 
+        WHERE userName = ${userName}
+    `;
+
+    if (!res || res.length === 0) {
+      return [];
+    }
+
+    return res.map(({ name, params }) => ({
+      userName,
+      name,
+      params: JSON.parse(params) as object,
+    }));
+  }
+
+  async deleteDraft({
+    userName,
+    draftName,
+  }: {
+    userName: string;
+    draftName: string;
+  }): Promise<void> {
+    await sql`
+        DELETE FROM user_drafts 
+        WHERE userName = ${userName} 
+        AND name = ${draftName} 
+    `;
+  }
 }
