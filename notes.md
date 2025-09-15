@@ -27,3 +27,19 @@ POST: not idempotent (some effect)
 - Add new endpoint? Get all drafts for user?
 - Continue to save drafts every 2 seconds? Or use separate button? (UX)
 - Make PR
+
+# Design
+
+- Where and how do we store data (drafts)?
+    - Reuse existing table `user_drafts`
+- How to store different drafts (multiple drafts per user)?
+    - Change the API endpoint to accept dynamic `draftName`
+- How to get all the drafts?
+    - Add a new API endpoint GET to read all the user-related drafts: GET `api/users/<user>/drafts
+
+- How will the feature work (behavior)?
+    - Ability to save invoice as a named draft
+    - Separate page to manage drafts
+    - Select draft to load it into the editor
+    - Delete draft
+    - Edit draft name
