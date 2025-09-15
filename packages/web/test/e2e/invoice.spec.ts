@@ -7,7 +7,7 @@ test.describe('Invoice Page', () => {
     await page.goto('http://localhost:3000/invoice');
 
     // 2. Fill in the form with test data
-    await page.fill('input[name="draftName"]', 'Invoice 123');
+    await page.fill('input[name="draftName"]', 'Draft 123');
     await page.fill('input[name="invoiceNumber"]', '123');
     await page.fill('input[placeholder="Who is this to?"]', 'Client Name');
     await page.fill(

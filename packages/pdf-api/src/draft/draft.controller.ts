@@ -37,7 +37,7 @@ export class DraftController {
       type: 'object',
       additionalProperties: true, // allow any shape
       example: {
-        draftName: 'Invoice 123',
+        draftName: 'Draft 123',
         invoiceNumber: '123',
         date: '2025-09-10',
         from: { name: 'Acme Inc.' },
@@ -85,7 +85,7 @@ export class DraftController {
       type: 'object',
       additionalProperties: true, // allow any shape
       example: {
-        draftName: 'Invoice 123',
+        draftName: 'Draft 123',
         invoiceNumber: '123',
         date: '2025-09-10',
         from: { name: 'Acme Inc.' },
