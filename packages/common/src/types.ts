@@ -22,8 +22,12 @@ export type LineItem = {
   rate: number; // price per unit
 };
 
-export type Invoice = {
+export type BasicInvoiceInfo = {
   invoiceName: string;
+  [key: string]: unknown;
+};
+
+export type Invoice = BasicInvoiceInfo & {
   invoiceNumber: string;
   date?: string;
   paymentTerms?: string;

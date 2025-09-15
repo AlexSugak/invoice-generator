@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { RequireApiKey } from '../decorators/require-api-key.decorator';
 import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { getLogger, Invoice } from '@invoice/common';
+import { BasicInvoiceInfo, getLogger } from '@invoice/common';
 import { DraftDetails, DraftService } from './draft.service';
 
 const logger = getLogger('DraftController');
@@ -51,7 +51,7 @@ export class DraftController {
   public async createDraft(
     @Param('draftName') draftName: string,
     @Param('userName') userName: string,
-    @Body() invoiceData: Invoice,
+    @Body() invoiceData: BasicInvoiceInfo,
   ) {
     logger.debug('createDraft', { draftName, userName });
     await this.draftService.createDraft({
@@ -99,7 +99,7 @@ export class DraftController {
   public async editDraft(
     @Param('draftId') draftId: number,
     @Param('userName') userName: string,
-    @Body() invoiceData: Invoice,
+    @Body() invoiceData: BasicInvoiceInfo,
   ) {
     logger.debug('edit', { draftId, userName });
     await this.draftService.editDraft({

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import sql from '../db';
-import { DraftsListItem, Invoice } from '@invoice/common';
+import { BasicInvoiceInfo, DraftsListItem } from '@invoice/common';
 
 export type DraftDetails = {
   userName: string;
@@ -16,7 +16,7 @@ export class DraftService {
     invoiceData,
   }: {
     userName: string;
-    invoiceData: Invoice;
+    invoiceData: BasicInvoiceInfo;
   }): Promise<void> {
     const { invoiceName, ...params } = invoiceData;
     await sql`
@@ -32,7 +32,7 @@ export class DraftService {
   }: {
     userName: string;
     draftId: number;
-    invoiceData: Invoice;
+    invoiceData: BasicInvoiceInfo;
   }): Promise<void> {
     const { invoiceName, ...params } = invoiceData;
     await sql`
