@@ -23,7 +23,7 @@ export type LineItem = {
 };
 
 export type BasicInvoiceInfo = {
-  invoiceName: string;
+  draftName: string;
   [key: string]: unknown;
 };
 

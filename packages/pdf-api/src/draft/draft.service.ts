@@ -18,10 +18,10 @@ export class DraftService {
     userName: string;
     invoiceData: BasicInvoiceInfo;
   }): Promise<void> {
-    const { invoiceName, ...params } = invoiceData;
+    const { draftName, ...params } = invoiceData;
     await sql`
         INSERT INTO user_drafts (userName, name, params, updated_at)
-        VALUES (${userName}, ${invoiceName}, ${JSON.stringify(params)}, now())
+        VALUES (${userName}, ${draftName}, ${JSON.stringify(params)}, now())
     `;
   }
 
@@ -34,10 +34,10 @@ export class DraftService {
     draftId: number;
     invoiceData: BasicInvoiceInfo;
   }): Promise<void> {
-    const { invoiceName, ...params } = invoiceData;
+    const { draftName, ...params } = invoiceData;
     await sql`
         UPDATE user_drafts
-        SET username = ${userName}, name = ${invoiceName}, params = ${JSON.stringify(params)}, updated_at = now()
+        SET username = ${userName}, name = ${draftName}, params = ${JSON.stringify(params)}, updated_at = now()
         WHERE id = ${draftId}
     `;
   }

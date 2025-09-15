@@ -122,11 +122,11 @@ function InvoiceHeader({
       {/* Invoide name */}
       <div className="col-span-2 md:col-span-2">
         <Input
-          label="Invoice name"
-          name="invoiceName"
-          value={invoice.invoiceName}
+          label="Draft name"
+          name="draftName"
+          value={invoice.draftName}
           onChange={(e) =>
-            setInvoice((v) => ({ ...v, invoiceName: e.target.value }))
+            setInvoice((v) => ({ ...v, draftName: e.target.value }))
           }
           className="w-120"
         />
@@ -556,7 +556,7 @@ function Extras({
 
 function getDefaultInvoiceData() {
   return {
-    invoiceName: `Invoice ${new Date().toISOString()}`,
+    draftName: `Invoice ${new Date().toISOString()}`,
     invoiceNumber: '1',
     date: '',
     paymentTerms: '',
