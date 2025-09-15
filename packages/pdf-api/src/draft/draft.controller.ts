@@ -16,7 +16,7 @@ const logger = getLogger('DraftController');
 @Controller('api')
 @RequireApiKey()
 export class DraftController {
-  constructor(private readonly draftServie: DraftService) {}
+  constructor(private readonly draftService: DraftService) {}
 
   @Put('users/:userName/drafts/:draftName')
   @HttpCode(200)
@@ -59,7 +59,7 @@ export class DraftController {
     @Body() draftParams: object,
   ) {
     logger.debug('saveDraft', { draftName, userName });
-    await this.draftServie.saveDraft({
+    await this.draftService.saveDraft({
       userName,
       draftName,
       params: draftParams,
@@ -73,7 +73,7 @@ export class DraftController {
   ): Promise<DraftDetails> {
     logger.debug('getDraft', { draftName, userName });
 
-    const draftDetails = await this.draftServie.getDraft({
+    const draftDetails = await this.draftService.getDraft({
       userName,
       draftName,
     });
@@ -83,5 +83,22 @@ export class DraftController {
     }
 
     return draftDetails;
+  }
+
+  @Get('users/:userName/drafts')
+  public async getUserDrafts(
+    @Param('userName') userName: string,
+  ): Promise<DraftDetails[]> {
+    logger.debug('getUserDrafts', { userName });
+
+    const drafts = await this.draftService.getUserDrafts({
+      userName,
+    });
+
+    if (!drafts) {
+      throw new NotFoundException('drafts not found');
+    }
+
+    return drafts;
   }
 }

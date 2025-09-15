@@ -28,6 +28,9 @@ export default function Header() {
           <Link href="/invoice" className="hover:text-gray-900">
             Create invoice
           </Link>
+          <Link href="/drafts" className="hover:text-gray-900">
+            Saved Drafts
+          </Link>
         </nav>
 
         {/* Right actions */}

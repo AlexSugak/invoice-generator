@@ -1,12 +1,10 @@
 import { useGetQuery } from '@/src/lib/useGetQuery';
 
-export function useDraftDetails({
+export function useDrafts({
   userName,
-  draftName,
   enabled,
 }: {
   userName: string;
-  draftName: string;
   enabled: boolean;
 }) {
     const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
@@ -17,15 +15,13 @@ export function useDraftDetails({
     }
 
   const query = useGetQuery<
-    { userName: string; name: string; params: Record<string, any> },
-    Blob
+    Array<{ userName: string; name: string; params: Record<string, any> }>
   >(
     {
-      endpoint: `/api/users/${userName}/drafts/${draftName}`,
+      endpoint: `${baseUrl}/api/users/${userName}/drafts`,
       requestOptions: {
-        noJson: true,
         headers: {
-          'X-API-Key': apiKey!,
+          'X-API-Key': apiKey,
         },
         fetchInit: {},
       },
