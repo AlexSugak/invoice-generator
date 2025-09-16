@@ -90,12 +90,14 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
   return (
     <Link
       href={`/invoice?draft=${draft.name}`}
-      className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer block"
+      className="group relative block rounded-xl border border-gray-200 bg-white/80 p-6 shadow-sm ring-1 ring-gray-100 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:ring-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">{draft.name}</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate group-hover:text-blue-700">
+            {draft.name}
+          </h3>
+          <ul className="text-sm text-gray-600 leading-6 space-y-1">
             {(p as DraftParams).invoiceNumber && (
               <li>Invoice #: {(p as DraftParams).invoiceNumber}</li>
             )}
@@ -103,16 +105,6 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
             {fromName && <li>From: {fromName}</li>}
             {toName && <li>To: {toName}</li>}
           </ul>
-        </div>
-        <div className="flex flex-shrink-0 space-x-2 ml-4">
-          <button className="text-blue-600 hover:text-blue-800 px-3 py-1 text-sm font-medium">Edit</button>
-          <button className="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm font-medium">Duplicate</button>
-          <button className="text-red-600 hover:text-red-800 px-3 py-1 text-sm font-medium">Delete</button>
-        </div>
-      </div>
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <span className="bg-gray-100 px-2 py-1 rounded text-xs">Draft</span>
         </div>
       </div>
     </Link>
