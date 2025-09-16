@@ -1,4 +1,13 @@
 import { useGetQuery } from '@/src/lib/useGetQuery';
+import { useMemo } from 'react';
+
+export interface DraftDetails {
+  id: string;
+  userName: string;
+  name: string;
+  updatedAt: string;
+  params: Record<string, any>;
+}
 
 const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
 if (!baseUrl) {
@@ -9,21 +18,18 @@ if (!apiKey) {
   throw new Error('missing NEXT_PUBLIC_API_KEY');
 }
 
-export function useDraftDetails({
+export function getDraftsByUser({
   userName,
-  draftName,
   enabled,
 }: {
   userName: string;
-  draftName: string;
   enabled: boolean;
 }) {
-  const query = useGetQuery<
-    { userName: string; draftName: string; params: Record<string, any> },
-    Blob
-  >(
+  const encoded = encodeURIComponent(userName);
+
+  const query = useGetQuery<DraftDetails[], Blob>(
     {
-      endpoint: `/api/users/${userName}/drafts/${draftName}`,
+      endpoint: `/api/users/${encoded}/drafts`,
       requestOptions: {
         headers: {
           'X-API-Key': apiKey!,
@@ -37,5 +43,7 @@ export function useDraftDetails({
     },
   );
 
-  return { ...query };
+  const data = useMemo(() => query.data ?? [], [query.data]);
+
+  return { ...query, data };
 }
