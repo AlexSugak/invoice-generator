@@ -9,17 +9,17 @@ if (!apiKey) {
   throw new Error('missing NEXT_PUBLIC_API_KEY');
 }
 
-export function useSaveDraft(userName: string) {
-  return usePostMutation<Record<string, any>, Blob>({
-    endpoint: `/api/users/${userName}/drafts/invoice-draft`,
+export function useSaveDraft(userName: string, draftName: string) {
+  const encodedUser = encodeURIComponent(userName);
+
+  return usePostMutation<{ draftName: string; params: any }, void>({
+    endpoint: `/api/users/${encodedUser}/drafts/${draftName}`,
     requestOptions: {
-      // baseUrl,
-      noJson: true,
-      blob: true,
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey!,
+        Accept: 'application/json',
       },
       fetchInit: {},
     },
