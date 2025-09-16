@@ -28,6 +28,18 @@ export class DraftService {
     `;
   }
 
+  async deleteDraft({
+    userName,
+    draftName,
+  }: {
+    userName: string;
+    draftName: string;
+  }): Promise<void> {
+    await this.db.Sql()`
+        DELETE FROM user_drafts where userName = ${userName} and name = ${draftName};
+    `;
+  }
+
   async getDraft({
     userName,
     draftName,
@@ -56,7 +68,7 @@ export class DraftService {
   }: {
     userName: string;
   }): Promise<DraftDetails[] | null> {
-    const res = await sql<Array<{ name: string; params: string }>>`
+    const res = await this.db.Sql()<Array<{ name: string; params: string }>>`
         SELECT name, params 
         FROM user_drafts 
         WHERE userName = ${userName} 

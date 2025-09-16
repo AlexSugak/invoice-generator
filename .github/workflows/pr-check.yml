@@ -28,8 +28,8 @@ jobs:
         run: yarn install --immutable
 
       - name: Build common package
-        run: yarn workspace @invoice/common build
+        run: yarn build:common
 
       - name: Run API tests
         run: |
-          yarn workspace @invoice/pdf-api test:e2e
+          yarn test:api:e2e

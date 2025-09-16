@@ -1,16 +1,19 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   NotFoundException,
   Param,
   Put,
+  Res,
 } from '@nestjs/common';
 import { RequireApiKey } from '../decorators/require-api-key.decorator';
 import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { getLogger } from '@invoice/common';
 import { DraftDetails, DraftService } from './draft.service';
+import { type Response } from 'express';
 
 const logger = getLogger('DraftController');
 @Controller('api/')
@@ -100,5 +103,19 @@ export class DraftController {
     }
 
     return drafts;
+  }
+
+  @Delete('users/:userName/drafts/:draftName')
+  public async delete(
+    @Res({ passthrough: true }) res: Response,
+    @Param('draftName') draftName: string,
+    @Param('userName') userName: string,
+  ): Promise<void> {
+    logger.debug('getDraft', { draftName, userName });
+
+    await this.draftService.deleteDraft({ userName, draftName });
+
+    res.status(204);
+    return;
   }
 }
