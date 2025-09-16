@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
@@ -588,6 +589,9 @@ function Extras({
  * Root Page
  * ========================= */
 export default function InvoicePage() {
+  const searchParams = useSearchParams();
+  const draftParam = searchParams.get('draft');
+  
   const [invoice, setInvoice] = useState<Invoice>({
     invoiceNumber: '1',
     date: '',
@@ -606,6 +610,8 @@ export default function InvoicePage() {
     amountPaid: 0,
     currency: 'USD',
   });
+
+  const [draftName, setDraftName] = useState(draftParam || '');
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
@@ -629,7 +635,7 @@ export default function InvoicePage() {
     error,
   } = useGenerateInvoicePdf();
   const handleGeneratePdf = async () => {
-    await generatePdf(invoice, {
+    generatePdf(invoice, {
       onSuccess: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -646,33 +652,68 @@ export default function InvoicePage() {
   const { data: session } = useSession();
   const { data: savedDraft } = useDraftDetails({
     userName: session?.user?.email || '',
-    enabled: !!session?.user?.email,
+    draftName: draftName,
+    enabled: !!session?.user?.email && !!draftName,
   });
 
-  // logger.debug('draft', savedDraft);
+  useEffect(() => {
+    if (draftParam && draftParam !== draftName) {
+      setDraftName(draftParam);
+    }
+  }, [draftParam, draftName]);
+
   useEffect(() => {
     logger.debug('setInvoice effect', { savedDraft });
-    const draft = JSON.parse((savedDraft as any as string) || '{}');
-    if (draft.params) {
-      logger.debug('setInvoice with ', draft.params);
-      setInvoice(draft.params as Invoice);
+    if (savedDraft && typeof savedDraft === 'object') {
+      if ('params' in savedDraft) {
+        logger.debug('setInvoice with ', savedDraft.params);
+        setInvoice(savedDraft.params as Invoice);
+      }
+    } else {
+      try {
+        const draft = JSON.parse((savedDraft as any as string) || '{}');
+        if (draft.params) {
+          logger.debug('setInvoice with ', draft.params);
+          setInvoice(draft.params as Invoice);
+        }
+      } catch (error) {
+        logger.debug('Failed to parse draft data', error);
+      }
     }
   }, [savedDraft]);
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
+  const { mutate: saveDraft } = useSaveDraft(
+    session?.user?.email || '',
+    draftName,
+  );
 
   if (isError) {
     console.error('failed to generate PDF', error);
   }
 
+  console.log(!draftName.trim())
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
+      <div className="flex items-center gap-3 mb-6">
+        <label className="text-sm font-medium text-gray-700" htmlFor="draftName">
+          * Draft Name:
+        </label>
+        <input
+          id="draftName"
+          className="rounded-md border border-gray-300 px-3 py-2 text-base font-medium outline-none focus:ring-2 focus:ring-indigo-500 h-10"
+          type="text"
+          value={draftName}
+          onChange={(e) => setDraftName(e.target.value)}
+        />
+        <button
+          className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-base font-medium text-white hover:bg-emerald-700 h-10 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => saveDraft(invoice)}
+          disabled={!draftName.trim()}
+        >
+          Save draft
+        </button>
+      </div>
+
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
         <Addresses invoice={invoice} setInvoice={setInvoice} />
