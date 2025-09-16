@@ -4,13 +4,13 @@ import { setupTestDatabase } from './helpers/database';
 import { setupTestApp } from './helpers/test-app';
 import { PGlite } from '@electric-sql/pglite';
 
-describe('DraftController (e2e)', () => {
+describe('Draft API (e2e)', () => {
   let app: INestApplication;
   let db: PGlite;
   const apiKey = 'test-api-key';
   let cleanup: () => Promise<void>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Setup database
     const dbSetup = await setupTestDatabase();
     db = dbSetup.db;
@@ -26,16 +26,15 @@ describe('DraftController (e2e)', () => {
     };
 
     // Insert test API key
-    await db.query(
+    await db.exec(
       `
       INSERT INTO api_keys (name, key, expires_at, updated_at)
-      VALUES ('Test API Key', $1, '2050-01-01', now())
+      VALUES ('Test API Key', '${apiKey}', '2050-01-01', now());
     `,
-      [apiKey],
     );
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await cleanup();
   });
 
@@ -77,6 +76,70 @@ describe('DraftController (e2e)', () => {
     await request(app.getHttpServer())
       .get('/api/users/testuser/drafts/test-draft')
       .set('X-API-Key', 'invalid-key')
+      .expect(401);
+  });
+
+  it('should delete draft', async () => {
+    await db.exec(
+      `
+      INSERT INTO user_drafts (userName, name, params, updated_at)
+      VALUES ('test-user', 'test-draft-2', '{}', now())
+    `,
+    );
+
+    await request(app.getHttpServer())
+      .delete('/api/users/test-user/drafts/test-draft-2')
+      .set('X-API-Key', apiKey)
+      .expect(204);
+
+    await request(app.getHttpServer())
+      .get('/api/users/test-user/drafts/test-draft-2')
+      .set('X-API-Key', apiKey)
+      .expect(404);
+  });
+
+  it('should call delete multiple times with same result', async () => {
+    await db.exec(
+      `
+      INSERT INTO user_drafts (userName, name, params, updated_at)
+      VALUES ('test-user', 'test-draft-2', '{}', now())
+    `,
+    );
+
+    await request(app.getHttpServer())
+      .delete('/api/users/test-user/drafts/test-draft-2')
+      .set('X-API-Key', apiKey)
+      .expect(204);
+
+    await request(app.getHttpServer())
+      .delete('/api/users/test-user/drafts/test-draft-2')
+      .set('X-API-Key', apiKey)
+      .expect(204);
+
+    await request(app.getHttpServer())
+      .get('/api/users/test-user/drafts/test-draft-2')
+      .set('X-API-Key', apiKey)
+      .expect(404);
+  });
+
+  it('delete should do nothing if no data', async () => {
+    await request(app.getHttpServer())
+      .delete('/api/users/test-user/drafts/test-draft-2')
+      .set('X-API-Key', apiKey)
+      .expect(204);
+  });
+
+  it('should handle expired api keys', async () => {
+    await db.exec(
+      `
+      INSERT INTO api_keys (name, key, expires_at, updated_at)
+      VALUES ('Test API Key 2', 'api-key-2', '2023-01-01', now());
+    `,
+    );
+
+    await request(app.getHttpServer())
+      .delete('/api/users/test-user/drafts/test-draft-2')
+      .set('X-API-Key', 'api-key-2')
       .expect(401);
   });
 });

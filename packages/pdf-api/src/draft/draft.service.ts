@@ -28,6 +28,18 @@ export class DraftService {
     `;
   }
 
+  async deleteDraft({
+    userName,
+    draftName,
+  }: {
+    userName: string;
+    draftName: string;
+  }): Promise<void> {
+    await this.db.Sql()`
+        DELETE FROM user_drafts where userName = ${userName} and name = ${draftName};
+    `;
+  }
+
   async getDraft({
     userName,
     draftName,
