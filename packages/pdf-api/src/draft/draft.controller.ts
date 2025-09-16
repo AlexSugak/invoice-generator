@@ -85,4 +85,21 @@ export class DraftController {
 
     return draftDetails;
   }
+
+  @Get('users/:userName/drafts')
+  public async getAllDrfts(
+    @Param('userName') userName: string,
+  ): Promise<Array<{ name: string }>> {
+    logger.debug('getAllDrafts', { userName });
+
+    const draftList = await this.draftServie.getAllDrafts({
+      userName,
+    });
+
+    if (!draftList) {
+      throw new NotFoundException('drafts not found');
+    }
+
+    return draftList;
+  }
 }

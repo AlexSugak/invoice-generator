@@ -27,3 +27,12 @@ POST: not idempotent (some effect)
 - Add new endpoint? Get all drafts for user?
 - Continue to save drafts every 2 seconds? Or use separate button? (UX)
 - Make PR
+
+# Tech design: Homework-1
+
+- On first page load don't fetch draft details
+- Add endpoint GET `api/users/<user>/drafts`, returns a list of available draft names only (no details)
+- Add a Select component with available drafts, When a draft is selected -> fetch draft details by its name.
+- Add checkbox "Save draft"
+- When checkbox is selected -> show input field "Enter draft name"
+- On clicking "Create invoice", if the checkbox is selected -> save a new draft with the entered name
