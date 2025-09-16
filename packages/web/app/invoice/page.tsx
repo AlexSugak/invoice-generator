@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
 import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
+import { Modal } from '@/src/components/Modal';
+import { useSearchParams } from 'next/navigation';
+import { useDrafts } from './_lib/useDrafts';
+import { Select } from '@/src/components/Select';
 
 const logger = getLogger('invoice editor');
 
@@ -588,6 +592,9 @@ function Extras({
  * Root Page
  * ========================= */
 export default function InvoicePage() {
+  const searchParams = useSearchParams();
+  const draftParam = searchParams.get('draft');
+
   const [invoice, setInvoice] = useState<Invoice>({
     invoiceNumber: '1',
     date: '',
@@ -606,6 +613,22 @@ export default function InvoicePage() {
     amountPaid: 0,
     currency: 'USD',
   });
+  const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+  const [draftName, setDraftName] = useState(draftParam || '');
+
+  const handleShowDraftModal = () => {
+    setIsDraftModalOpen(true);
+  };
+
+  const handleCloseDraftModal = () => {
+    setDraftName('');
+    setIsDraftModalOpen(false);
+  };
+
+  const handleResetDraft = () => {
+    setDraftName('');
+    window.location.href = `/invoice?${createQueryString('draft', '')}`;
+  };
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
@@ -646,26 +669,60 @@ export default function InvoicePage() {
   const { data: session } = useSession();
   const { data: savedDraft } = useDraftDetails({
     userName: session?.user?.email || '',
+    draftName,
+    enabled: !!session?.user?.email && !!draftName,
+  });
+  const { data: drafts } = useDrafts({
+    userName: session?.user?.email || '',
     enabled: !!session?.user?.email,
   });
 
-  // logger.debug('draft', savedDraft);
+  useEffect(() => {
+    if (draftParam && draftParam !== draftName) {
+      setDraftName(draftParam);
+    }
+  }, [draftParam, draftName]);
+
   useEffect(() => {
     logger.debug('setInvoice effect', { savedDraft });
-    const draft = JSON.parse((savedDraft as any as string) || '{}');
-    if (draft.params) {
-      logger.debug('setInvoice with ', draft.params);
-      setInvoice(draft.params as Invoice);
+    if (savedDraft && typeof savedDraft === 'object') {
+      if ('params' in savedDraft) {
+        logger.debug('setInvoice with ', savedDraft.params);
+        setInvoice(savedDraft.params as Invoice);
+      }
+    } else {
+      try {
+        const draft = JSON.parse((savedDraft as any as string) || '{}');
+        if (draft.params) {
+          logger.debug('setInvoice with ', draft.params);
+          setInvoice(draft.params as Invoice);
+        }
+      } catch (error) {
+        logger.debug('Failed to parse draft data', error);
+      }
     }
   }, [savedDraft]);
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
+  const { mutate: saveDraft } = useSaveDraft({
+    userName: session?.user?.email || '',
+    draftName,
+  });
+
+  const handleSaveDraft = () => {
+    saveDraft(invoice);
+
+    handleCloseDraftModal();
+  };
+
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, value);
+
+      return params.toString();
+    },
+    [searchParams],
+  );
 
   if (isError) {
     console.error('failed to generate PDF', error);
@@ -673,8 +730,35 @@ export default function InvoicePage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
+      <div className="flex items-center gap-2">
+        <Select
+          label="Draft"
+          value={draftName}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+            const newDraft = e.target.value;
+            window.location.href = `/invoice?${createQueryString('draft', newDraft)}`;
+          }}
+          options={
+            drafts?.map((draft) => ({
+              value: draft.name,
+              label: draft.name,
+            })) || []
+          }
+          placeholder="Select a draft"
+        />
+
+        <button
+          type="button"
+          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-2.5 mt-2.5 text-sm text-white hover:bg-emerald-700"
+          onClick={handleResetDraft}
+        >
+          Reset draft
+        </button>
+      </div>
+
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
+
         <Addresses invoice={invoice} setInvoice={setInvoice} />
         <LineItems invoice={invoice} setInvoice={setInvoice} />
 
@@ -691,7 +775,14 @@ export default function InvoicePage() {
         </div>
       </div>
 
-      <div className="pt-2 w-full flex justify-end">
+      <div className="pt-2 w-full flex justify-end gap-2">
+        <button
+          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-gray-600 px-5 py-3 text-base font-semibold text-white hover:bg-gray-700"
+          onClick={handleShowDraftModal}
+        >
+          Save draft
+        </button>
+
         <button
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
           onClick={handleGeneratePdf}
@@ -700,6 +791,29 @@ export default function InvoicePage() {
           Create Invoice PDF
         </button>
       </div>
+
+      <Modal
+        isOpen={isDraftModalOpen}
+        onClose={handleCloseDraftModal}
+        title="New draft"
+      >
+        <div className="mt-6">
+          <Input
+            label="Name"
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+          />
+
+          <button
+            type="button"
+            disabled={!draftName.trim()}
+            className="disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-400 cursor-pointer w-full inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 mt-3 text-base font-semibold text-white hover:bg-emerald-700"
+            onClick={handleSaveDraft}
+          >
+            Save
+          </button>
+        </div>
+      </Modal>
     </main>
   );
 }

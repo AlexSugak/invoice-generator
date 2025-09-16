@@ -30,6 +30,13 @@ export default function Header() {
           </Link>
         </nav>
 
+        {/* Drafts */}
+        <div className="ml-4 hidden items-center gap-5 text-sm text-gray-600 md:flex">
+          <Link href="/drafts" className="hover:text-gray-900">
+            Drafts
+          </Link>
+        </div>
+
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-2">
           {/* Language + theme placeholders (icons optional) */}
