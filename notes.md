@@ -27,3 +27,18 @@ POST: not idempotent (some effect)
 - Add new endpoint? Get all drafts for user?
 - Continue to save drafts every 2 seconds? Or use separate button? (UX)
 - Make PR
+
+# Solution
+
+- Where and how do we store different drafts?
+  - Use existing table `user_drafts`
+  - Update API to be able to pass draft name: PUT `api/users/<user>/drafts/<draft name>` { params: {...} }
+
+- How do we get the drafts list for each user?
+  - Add API to read user drafts: GET `api/users/<user>/drafts`
+
+- How the feature will work (behavior)?
+  - On first page load use the initial state with empty form fields
+  - Allow user to select from existing drafts and fill the form fields with this data
+  - Add a button that allows saving/editing a draft: a modal will be opened, user can type a new draft name or use the selected draft name, and save or delete draft by providing the name
+  - After saving/editing the new draft list will be requested
