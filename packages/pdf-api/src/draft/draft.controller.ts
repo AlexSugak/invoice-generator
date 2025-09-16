@@ -7,13 +7,13 @@ import {
   Param,
   Put,
 } from '@nestjs/common';
-import { RequireApiKey } from '../decorators/require-api-key.decorator';
+import { RequireApiKey } from '@/decorators/require-api-key.decorator';
 import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { getLogger } from '@invoice/common';
 import { DraftDetails, DraftService } from './draft.service';
 
 const logger = getLogger('DraftController');
-@Controller('api/')
+@Controller('api')
 @RequireApiKey()
 export class DraftController {
   constructor(private readonly draftService: DraftService) {}
@@ -53,18 +53,21 @@ export class DraftController {
       },
     },
   })
+  @Put('users/:userName/drafts/:draftName')
   public async saveDraft(
     @Param('draftName') draftName: string,
     @Param('userName') userName: string,
     @Body() draftParams: object,
   ) {
-    logger.debug('saveDraft', { draftName, userName });
+    logger.debug('saveDraft', { draftName, userName, draftParams });
 
     await this.draftService.saveDraft({
       userName,
       draftName,
       params: draftParams,
     });
+
+    return { success: true };
   }
 
   @Get('users/:userName/drafts/:draftName')
@@ -84,5 +87,24 @@ export class DraftController {
     }
 
     return draftDetails;
+  }
+
+  @Get('users/:userName/drafts')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Get list of drafts',
+  })
+  @ApiParam({
+    name: 'userName',
+    description: 'Name of the user',
+    required: true,
+    schema: { type: 'string' },
+  })
+  public async getDraftsByUser(
+    @Param('userName') userName: string,
+  ): Promise<DraftDetails[]> {
+    logger.debug(`getDraftsByUser - user: ${userName}`);
+
+    return await this.draftService.getDraftsByUser(userName);
   }
 }
