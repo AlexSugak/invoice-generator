@@ -27,3 +27,8 @@ POST: not idempotent (some effect)
 - Add new endpoint? Get all drafts for user?
 - Continue to save drafts every 2 seconds? Or use separate button? (UX)
 - Make PR
+
+- Add button to save draft
+- Create endpoint of draft list
+- Add component of draft lists
+- Set draft into form
