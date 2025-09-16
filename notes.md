@@ -19,7 +19,7 @@ PUT vs POST
 PUT: idempotent (can call many times with same effect)
 POST: not idempotent (some effect)
 
-# Homework
+# Homework (day 1)
 
 - Make it possible to set draft name
 - Be able to select draft from the list of previously saved drafts
@@ -27,3 +27,13 @@ POST: not idempotent (some effect)
 - Add new endpoint? Get all drafts for user?
 - Continue to save drafts every 2 seconds? Or use separate button? (UX)
 - Make PR
+
+# Homework (day 2)
+
+- Add e2e tests for new endpoints which you added before
+- If did not do day1 homework: create new endpoint (e.g. settings)
+- [OPTIONAL]: add new web e2e tests (playwright) for new features
+- Extend `.github/workflows/pr-checks.yml`: add prettier format check
+  - add prettier:check script
+  - add prettierignore to skip formatting check for e.g. node_modules
+  - extend `pr-checks.yml` to run this new script

@@ -10,6 +10,7 @@ export async function setupTestDatabase() {
   const port = 5434;
   const host = '127.0.0.1';
   const database = 'invoice_generator';
+
   const db = await PGlite.create({ database });
   const server = new PGLiteSocketServer({
     db,
@@ -17,6 +18,8 @@ export async function setupTestDatabase() {
     host,
   });
   await server.start();
+
+  await db.waitReady;
 
   logger.debug('started pglite db server', { port, host });
 
