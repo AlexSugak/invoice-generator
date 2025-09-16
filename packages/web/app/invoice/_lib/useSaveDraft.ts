@@ -1,19 +1,16 @@
 import { usePostMutation } from '@/src/lib/usePostMutation';
 
-const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
-if (!baseUrl) {
-  throw new Error('missing NEXT_PUBLIC_API_HOST');
-}
-const apiKey = process.env.NEXT_PUBLIC_API_KEY;
-if (!apiKey) {
-  throw new Error('missing NEXT_PUBLIC_API_KEY');
-}
+export function useSaveDraft({ userName, draftName }: { userName: string; draftName: string }) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
+  const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 
-export function useSaveDraft(userName: string) {
+  if (!apiKey || !baseUrl) {
+      throw new Error('Miss the API key or API host');
+  }
+
   return usePostMutation<Record<string, any>, Blob>({
-    endpoint: `/api/users/${userName}/drafts/invoice-draft`,
+    endpoint: `/api/users/${userName}/drafts/${draftName}`,
     requestOptions: {
-      // baseUrl,
       noJson: true,
       blob: true,
       method: 'PUT',
