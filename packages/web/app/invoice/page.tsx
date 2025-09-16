@@ -12,7 +12,10 @@ import {
 } from '@/app/invoice/components';
 import { useGenerateInvoicePdf } from '@/app/invoice/_lib/useGeneratePdf';
 import { useSaveDraft } from '@/app/invoice/_lib/useSaveDraft';
-import { DraftDetails, getDraftsByUser } from '@/app/drafts/_lib/getDraftsByUser';
+import {
+  DraftDetails,
+  getDraftsByUser,
+} from '@/app/drafts/_lib/getDraftsByUser';
 import { DraftNameInput } from '@/app/drafts/components/DraftNameInput';
 import { useDraftDetails } from '@/app/invoice/_lib/useDraftDetails';
 import {
@@ -34,26 +37,47 @@ export default function InvoicePage() {
 
   const firstLoadRef = useRef(true);
 
-  const { data: drafts = [], refetch: refetchDrafts } = getDraftsByUser({ userName, enabled: !!userName });
+  const { data: drafts = [], refetch: refetchDrafts } = getDraftsByUser({
+    userName,
+    enabled: !!userName,
+  });
   const { mutate: saveDraft } = useSaveDraft(userName, draftName);
-  const { data: draftDetails } = useDraftDetails({ userName, draftName, enabled: !!userName && !!draftName });
+  const { data: draftDetails } = useDraftDetails({
+    userName,
+    draftName,
+    enabled: !!userName && !!draftName,
+  });
+  const {
+    mutate: generatePdf,
+    isPending,
+    isError,
+    error,
+  } = useGenerateInvoicePdf();
 
   useEffect(() => {
     if (!userName) return;
     if (!drafts.length && !draftDetails) return;
     if (!firstLoadRef.current) return;
 
-    let draftToLoad: DraftDetails | { draftName: string; params: any } | undefined;
+    let draftToLoad:
+      | DraftDetails
+      | { draftName: string; params: any }
+      | undefined;
 
     if (draftParam) {
       draftToLoad = drafts.find((d) => getDraftName(d) === draftParam);
-      if (!draftToLoad && draftDetails && getDraftName(draftDetails) === draftParam) {
+      if (
+        !draftToLoad &&
+        draftDetails &&
+        getDraftName(draftDetails) === draftParam
+      ) {
         draftToLoad = draftDetails;
       }
     }
 
     if (!draftToLoad) {
-      draftToLoad = drafts.find((d) => getDraftName(d) === draftName) ?? draftDetails;
+      draftToLoad =
+        drafts.find((d) => getDraftName(d) === draftName) ?? draftDetails;
     }
 
     if (draftToLoad) {
@@ -84,16 +108,20 @@ export default function InvoicePage() {
     return () => clearTimeout(timeout);
   }, [invoice, draftName, userName, isDirty, currentDraftName, saveDraft]);
 
-  const handleInvoiceChange: React.Dispatch<React.SetStateAction<Invoice>> = (value) => {
+  const handleInvoiceChange: React.Dispatch<React.SetStateAction<Invoice>> = (
+    value,
+  ) => {
     setInvoice((prev) => {
-      const next = typeof value === 'function' ? (value as (prev: Invoice) => Invoice)(prev) : value;
+      const next =
+        typeof value === 'function'
+          ? (value as (prev: Invoice) => Invoice)(prev)
+          : value;
       setIsDirty(true);
       return next;
     });
   };
 
   const handleGeneratePdf = async () => {
-    const { mutate: generatePdf } = useGenerateInvoicePdf();
     await generatePdf(invoice, {
       onSuccess: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -107,6 +135,10 @@ export default function InvoicePage() {
       },
     });
   };
+
+  if (isError) {
+    console.error('failed to generate PDF', error);
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -130,6 +162,7 @@ export default function InvoicePage() {
         <button
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
           onClick={handleGeneratePdf}
+          disabled={isPending}
         >
           Create Invoice PDF
         </button>
