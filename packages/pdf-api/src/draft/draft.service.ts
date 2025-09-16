@@ -1,5 +1,5 @@
+import { DatabaseService } from '../db.service';
 import { Injectable } from '@nestjs/common';
-import sql from '../db';
 import { BasicInvoiceInfo, DraftsListItem } from '@invoice/common';
 
 export type DraftDetails = {
@@ -11,6 +11,8 @@ export type DraftDetails = {
 
 @Injectable()
 export class DraftService {
+  constructor(private readonly db: DatabaseService) {}
+
   async createDraft({
     userName,
     invoiceData,
@@ -19,7 +21,7 @@ export class DraftService {
     invoiceData: BasicInvoiceInfo;
   }): Promise<void> {
     const { draftName, ...params } = invoiceData;
-    await sql`
+    await this.db.Sql()`
         INSERT INTO user_drafts (userName, name, params, updated_at)
         VALUES (${userName}, ${draftName}, ${JSON.stringify(params)}, now())
     `;
@@ -35,7 +37,7 @@ export class DraftService {
     invoiceData: BasicInvoiceInfo;
   }): Promise<void> {
     const { draftName, ...params } = invoiceData;
-    await sql`
+    await this.db.Sql()`
         UPDATE user_drafts
         SET username = ${userName}, name = ${draftName}, params = ${JSON.stringify(params)}, updated_at = now()
         WHERE id = ${draftId}
@@ -49,7 +51,7 @@ export class DraftService {
     userName: string;
     draftId: number;
   }): Promise<DraftDetails | null> {
-    const res = await sql<Array<{ name: string; params: string }>>`
+    const res = await this.db.Sql()<Array<{ name: string; params: string }>>`
         SELECT name, params 
         FROM user_drafts 
         WHERE userName = ${userName} 
@@ -71,7 +73,7 @@ export class DraftService {
   }
 
   async getDrafts(userName: string): Promise<DraftsListItem[]> {
-    const res = await sql<Array<{ id: number; name: string }>>`
+    const res = await this.db.Sql()<Array<{ id: number; name: string }>>`
         SELECT id, name 
         FROM user_drafts 
         WHERE userName = ${userName} 

@@ -29,3 +29,9 @@ After that is done:
 - (you may need to get some of the secrets to put in your .env)
 - run docker-compose with DB and other dependencies: `yarn docker:up`
 - start Back-End and Front-End locally: `yarn dev:all`
+
+## Local setup
+
+- Generate API key (or use existing one): `yarn api-key`
+- Insert API key to DB: `yarn db:api-key`
+- Insert invoice tempalte to DB: `yarn db:invoice-template`

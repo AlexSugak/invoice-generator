@@ -9,11 +9,11 @@ import {
 } from '@nestjs/common';
 import { RequireApiKey } from '../decorators/require-api-key.decorator';
 import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { BasicInvoiceInfo, getLogger } from '@invoice/common';
+import { type BasicInvoiceInfo, getLogger } from '@invoice/common';
 import { DraftDetails, DraftService } from './draft.service';
 
 const logger = getLogger('DraftController');
-@Controller('api')
+@Controller('api/')
 @RequireApiKey()
 export class DraftController {
   constructor(private readonly draftService: DraftService) {}
