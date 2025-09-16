@@ -7,10 +7,10 @@ import {
   Param,
   Put,
 } from '@nestjs/common';
-import { RequireApiKey } from '../decorators/require-api-key.decorator';
 import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { getLogger } from '@invoice/common';
 import { DraftDetails, DraftService } from './draft.service';
+import { RequireApiKey } from '@/decorators/require-api-key.decorator';
 
 const logger = getLogger('DraftController');
 @Controller('api')
@@ -83,5 +83,18 @@ export class DraftController {
     }
 
     return draftDetails;
+  }
+
+  @Get('users/:userName/drafts')
+  public async getDrafts(
+    @Param('userName') userName: string,
+  ): Promise<DraftDetails[]> {
+    logger.debug('getDrafts', { userName });
+
+    const drafts = await this.draftServie.getAllDrafts({
+      userName,
+    });
+
+    return drafts;
   }
 }

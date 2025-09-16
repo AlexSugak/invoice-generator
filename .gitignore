@@ -33,3 +33,7 @@ next-env.d.ts
 
 # docker
 postgres_data
+
+# IDEs and editors
+.idea
+idea
