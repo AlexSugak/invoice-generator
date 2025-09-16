@@ -690,7 +690,7 @@ export default function InvoicePage() {
             setCurrentInvoiceId(undefined);
             setInvoice(getDefaultInvoiceData());
           }}
-        >Створити</button>
+        >Create</button>
       </aside>
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

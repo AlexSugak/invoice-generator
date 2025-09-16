@@ -48,7 +48,7 @@ describe('DraftController (e2e)', () => {
 
     // Save draft
     await request(app.getHttpServer())
-      .put('/api/users/testuser/drafts/test-draft')
+      .post('/api/users/testuser/drafts/test-draft')
       .set('X-API-Key', apiKey)
       .send(testDraft)
       .expect(200);

@@ -18,7 +18,7 @@ export function useCreateDraft(userName: string) {
       // baseUrl,
       noJson: true,
       blob: true,
-      method: 'PUT',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey!,
