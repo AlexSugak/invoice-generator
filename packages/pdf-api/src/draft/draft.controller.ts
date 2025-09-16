@@ -5,6 +5,7 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  Post,
   Put,
 } from '@nestjs/common';
 import { RequireApiKey } from '../decorators/require-api-key.decorator';
@@ -18,7 +19,7 @@ const logger = getLogger('DraftController');
 export class DraftController {
   constructor(private readonly draftService: DraftService) {}
 
-  @Put('users/:userName/drafts/create')
+  @Post('users/:userName/drafts/create')
   @HttpCode(200)
   @ApiOperation({
     summary: 'Creates user template draft',
