@@ -13,7 +13,7 @@ import { getLogger } from '@invoice/common';
 import { DraftDetails, DraftService } from './draft.service';
 
 const logger = getLogger('DraftController');
-@Controller('api')
+@Controller('api/')
 @RequireApiKey()
 export class DraftController {
   constructor(private readonly draftService: DraftService) {}

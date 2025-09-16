@@ -1,5 +1,5 @@
+import { DatabaseService } from '../db.service';
 import { Injectable } from '@nestjs/common';
-import sql from '../db';
 
 export type DraftDetails = {
   userName: string;
@@ -9,6 +9,8 @@ export type DraftDetails = {
 
 @Injectable()
 export class DraftService {
+  constructor(private readonly db: DatabaseService) {}
+
   async saveDraft({
     userName,
     draftName,
@@ -18,7 +20,7 @@ export class DraftService {
     draftName: string;
     params: object;
   }): Promise<void> {
-    await sql`
+    await this.db.Sql()`
         INSERT INTO user_drafts (userName, name, params, updated_at)
         VALUES (${userName}, ${draftName}, ${JSON.stringify(params)}, now())
         ON CONFLICT (userName, name) DO UPDATE
@@ -33,7 +35,7 @@ export class DraftService {
     userName: string;
     draftName: string;
   }): Promise<DraftDetails | null> {
-    const res = await sql<Array<{ params: string }>>`
+    const res = await this.db.Sql()<Array<{ params: string }>>`
         SELECT params 
         FROM user_drafts 
         WHERE userName = ${userName} 

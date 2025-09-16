@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import Handlebars from 'handlebars';
 import Puppeteer from 'puppeteer';
-import sql from '../db';
+import { DatabaseService } from '../db.service';
 
 Handlebars.registerHelper('times', (a: any, b: any) => {
   const x = Number(a) || 0,
@@ -69,16 +69,32 @@ Handlebars.registerHelper('formatDate', (iso?: string) => {
 
 @Injectable()
 export class PdfService {
+  constructor(private readonly db: DatabaseService) {}
+
   async generatePdf(
     templateName: string,
     params: object,
   ): Promise<Uint8Array<ArrayBufferLike>> {
-    const template = await readTemplate(templateName);
+    const template = await this.readTemplate(templateName);
 
     const compile = Handlebars.compile(template, { noEscape: true });
     const html = compile(params);
     const pdf = await generatePDFfromHTML(html);
     return pdf;
+  }
+
+  async readTemplate(templateName: string): Promise<string> {
+    const [{ body }] = await this.db.Sql()<Array<{ body: string }>>`
+      SELECT body 
+      FROM templates 
+      WHERE name = ${templateName} 
+    `;
+
+    if (!body) {
+      throw new Error('Template not found: ' + templateName);
+    }
+
+    return body;
   }
 }
 
@@ -93,18 +109,4 @@ async function generatePDFfromHTML(
   await browser.close();
 
   return pdfBuffer;
-}
-
-async function readTemplate(templateName: string): Promise<string> {
-  const [{ body }] = await sql<Array<{ body: string }>>`
-    SELECT body 
-    FROM templates 
-    WHERE name = ${templateName} 
-  `;
-
-  if (!body) {
-    throw new Error('Template not found: ' + templateName);
-  }
-
-  return body;
 }
