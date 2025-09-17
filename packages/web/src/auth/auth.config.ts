@@ -1,4 +1,5 @@
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { NextAuthConfig } from 'next-auth';
 
 export const authConfig: NextAuthConfig = {
@@ -24,3 +25,21 @@ export const authConfig: NextAuthConfig = {
     },
   },
 };
+
+// Add a credentials provider for testing purposes
+if (process.env.NODE_ENV === 'test') {
+  authConfig.providers.push(
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'text' },
+      },
+      async authorize(credentials) {
+        if (credentials?.email) {
+          return { id: 'test-user', email: credentials.email as string };
+        }
+        return null;
+      },
+    }),
+  );
+}

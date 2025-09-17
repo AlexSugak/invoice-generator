@@ -142,4 +142,60 @@ describe('Draft API (e2e)', () => {
       .set('X-API-Key', 'api-key-2')
       .expect(401);
   });
+
+  it('should update an existing draft', async () => {
+    const initialDraft = { content: 'initial' };
+    const updatedDraft = { content: 'updated' };
+
+    // Create draft
+    await request(app.getHttpServer())
+      .put('/api/users/test-user/drafts/draft-to-update')
+      .set('X-API-Key', apiKey)
+      .send(initialDraft)
+      .expect(200);
+
+    // Update draft
+    await request(app.getHttpServer())
+      .put('/api/users/test-user/drafts/draft-to-update')
+      .set('X-API-Key', apiKey)
+      .send(updatedDraft)
+      .expect(200);
+
+    // Verify update
+    const response = await request(app.getHttpServer())
+      .get('/api/users/test-user/drafts/draft-to-update')
+      .set('X-API-Key', apiKey)
+      .expect(200);
+
+    expect(response.body.params).toEqual(updatedDraft);
+  });
+
+  it('should list user drafts', async () => {
+    const draft1 = { invoiceNumber: '1' };
+    const draft2 = { invoiceNumber: '2' };
+
+    // Create drafts
+    await request(app.getHttpServer())
+      .put('/api/users/test-user/drafts/draft-1')
+      .set('X-API-Key', apiKey)
+      .send(draft1)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .put('/api/users/test-user/drafts/draft-2')
+      .set('X-API-Key', apiKey)
+      .send(draft2)
+      .expect(200);
+
+    // List drafts
+    const response = await request(app.getHttpServer())
+      .get('/api/users/test-user/drafts')
+      .set('X-API-Key', apiKey)
+      .expect(200);
+
+    expect(response.body).toEqual([
+      { userName: 'test-user', name: 'draft-1', params: draft1 },
+      { userName: 'test-user', name: 'draft-2', params: draft2 },
+    ]);
+  });
 });

@@ -1,19 +1,37 @@
-import { FullConfig } from '@playwright/test';
+import { chromium, FullConfig } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
-async function globalSetup(config: FullConfig) {
-  const downloadDir = path.join(__dirname, 'downloads');
+const authFile = path.join(__dirname, 'auth.json');
 
-  // Ensure downloads directory exists
-  if (!fs.existsSync(downloadDir)) {
+async function globalSetup(config: FullConfig) {
+  // Clear previous downloads
+  const downloadDir = path.join(__dirname, 'downloads');
+  if (fs.existsSync(downloadDir)) {
+    fs.readdirSync(downloadDir).forEach((file) => {
+      fs.unlinkSync(path.join(downloadDir, file));
+    });
+  } else {
     fs.mkdirSync(downloadDir, { recursive: true });
   }
 
-  // Clear previous downloads
-  fs.readdirSync(downloadDir).forEach((file) => {
-    fs.unlinkSync(path.join(downloadDir, file));
-  });
+  // Perform login
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto('http://localhost:3000/signin');
+  await page.getByRole('button', { name: 'Login In' }).click();
+
+  await page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/session') && response.status() === 200
+  );
+
+  // Wait for the main page to load after login
+  // await page.waitForURL('http://localhost:3000/');
+
+  // Save the authenticated state
+  await page.context().storageState({ path: authFile });
+  await browser.close();
 }
 
 export default globalSetup;

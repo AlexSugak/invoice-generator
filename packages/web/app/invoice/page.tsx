@@ -119,6 +119,10 @@ export default function InvoicePage() {
   });
 
   const saveDraftAndReplaceUrl = (invoice: Invoice) => {
+    if (!session?.user?.email) {
+      logger.error('Cannot save draft, user email is not available');
+      return;
+    }
     saveDraft(invoice);
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set('draft', draftName);

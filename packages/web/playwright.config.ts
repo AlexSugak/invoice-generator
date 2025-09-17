@@ -1,4 +1,7 @@
 import { PlaywrightTestConfig } from '@playwright/test';
+import path from 'path';
+
+const authFile = path.join(__dirname, 'test/e2e/auth.json');
 
 const config: PlaywrightTestConfig = {
   timeout: 3000,
@@ -8,6 +11,7 @@ const config: PlaywrightTestConfig = {
     baseURL: 'http://localhost:3000',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    storageState: authFile,
   },
   testMatch: '**/*.spec.ts',
   reporter: 'html',
