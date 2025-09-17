@@ -153,6 +153,7 @@ export default function InvoicePage() {
           className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-2 py-1 text-base font-semibold text-white hover:bg-emerald-700"
           onClick={() => saveDraftAndReplaceUrl(invoice)}
           disabled={isPending}
+          id='save-draft-button'
         >
           Save Invoice Draft as: {draftName}
         </button>
