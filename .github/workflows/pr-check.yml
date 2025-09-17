@@ -33,3 +33,6 @@ jobs:
       - name: Run API tests
         run: |
           yarn workspace @invoice/pdf-api test:e2e
+
+      - name: Run prettier check
+        run: yarn run prettier:check

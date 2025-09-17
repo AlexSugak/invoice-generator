@@ -25,7 +25,9 @@
     "migrate": "yarn withenv workspace @invoice/db migrate",
     "db:api-key": "yarn withenv node ./scripts/insert-api-key.js",
     "api-key": "node ./scripts/generate-api-key.js",
-    "db:invoice-template": "yarn withenv node ./scripts/insert-invoice-template.js"
+    "db:invoice-template": "yarn withenv node ./scripts/insert-invoice-template.js",
+    "prettier:check": "prettier --check .",
+    "prettier:write": "prettier --write ."
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

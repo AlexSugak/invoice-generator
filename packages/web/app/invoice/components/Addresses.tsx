@@ -1,7 +1,14 @@
 import { Invoice } from '@/app/invoice/_lib/types';
 import { AddressFields } from '@/app/invoice/components/index';
+import React from 'react';
 
-export default function Addresses({ invoice, setInvoice }: { invoice: Invoice; setInvoice: React.Dispatch<React.SetStateAction<Invoice>> }) {
+export default function Addresses({
+  invoice,
+  setInvoice,
+}: {
+  invoice: Invoice;
+  setInvoice: React.Dispatch<React.SetStateAction<Invoice>>;
+}) {
   return (
     <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
       <AddressFields
