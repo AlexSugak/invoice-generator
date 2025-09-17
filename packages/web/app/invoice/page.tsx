@@ -4,55 +4,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
-import { useSaveDraft } from './_lib/useSaveDraft';
-import { getLogger } from '@invoice/common';
+import { Address, getLogger, Invoice, LineItem } from '@invoice/common';
+import { useDrafts } from './_lib/useDrafts';
+import { useCreateDraft } from './_lib/useCreateDraft';
+import { useEditDraft } from './_lib/useEditDraft';
 
 const logger = getLogger('invoice editor');
-
-/* =========================
- * Types
- * ========================= */
-type Address = {
-  name: string;
-  line1?: string;
-  line2?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-  email?: string;
-  phone?: string;
-};
-
-type LineItem = {
-  id: string;
-  description: string;
-  quantity: number;
-  rate: number; // price per unit
-};
-
-type Invoice = {
-  invoiceNumber: string;
-  date?: string;
-  paymentTerms?: string;
-  dueDate?: string;
-  poNumber?: string;
-
-  from: Address;
-  billTo: Address;
-  shipTo: Address;
-
-  items: LineItem[];
-
-  notes?: string;
-  terms?: string;
-
-  taxPercent: number; // e.g. 19 for 19%
-  discount: number; // flat amount
-  shipping: number; // flat amount
-  amountPaid: number; // already paid
-  currency: string;
-};
 
 /* =========================
  * Helpers
@@ -162,6 +119,19 @@ function InvoiceHeader({
 }) {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {/* Invoide name */}
+      <div className="col-span-2 md:col-span-2">
+        <Input
+          label="Draft name"
+          name="draftName"
+          value={invoice.draftName}
+          onChange={(e) =>
+            setInvoice((v) => ({ ...v, draftName: e.target.value }))
+          }
+          className="w-120"
+        />
+      </div>
+
       {/* Big 'INVOICE' + number */}
       <div className="col-span-2 md:col-span-2">
         <div className="flex items-start">
@@ -584,11 +554,9 @@ function Extras({
   );
 }
 
-/* =========================
- * Root Page
- * ========================= */
-export default function InvoicePage() {
-  const [invoice, setInvoice] = useState<Invoice>({
+function getDefaultInvoiceData() {
+  return {
+    draftName: `Invoice ${new Date().toISOString()}`,
     invoiceNumber: '1',
     date: '',
     paymentTerms: '',
@@ -605,7 +573,15 @@ export default function InvoicePage() {
     shipping: 0,
     amountPaid: 0,
     currency: 'USD',
-  });
+  };
+}
+
+/* =========================
+ * Root Page
+ * ========================= */
+export default function InvoicePage() {
+  const [currentInvoiceId, setCurrentInvoiceId] = useState<number>();
+  const [invoice, setInvoice] = useState<Invoice>(getDefaultInvoiceData());
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
@@ -624,7 +600,7 @@ export default function InvoicePage() {
 
   const {
     mutate: generatePdf,
-    isPending,
+    isPending: isGeneratePdfPending,
     isError,
     error,
   } = useGenerateInvoicePdf();
@@ -644,9 +620,14 @@ export default function InvoicePage() {
   };
 
   const { data: session } = useSession();
-  const { data: savedDraft } = useDraftDetails({
+  const { data: drafts, isLoading: isLoadingDrafts } = useDrafts({
     userName: session?.user?.email || '',
     enabled: !!session?.user?.email,
+  });
+  const { data: savedDraft, isLoading: isLoadingDraftDetails } = useDraftDetails({
+    userName: session?.user?.email || '',
+    draftId: currentInvoiceId,
+    enabled: !!session?.user?.email && !!currentInvoiceId,
   });
 
   // logger.debug('draft', savedDraft);
@@ -659,47 +640,106 @@ export default function InvoicePage() {
     }
   }, [savedDraft]);
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
+  const {
+    mutate: createDraft,
+    isPending: isCreateDraftPending,
+  } = useCreateDraft(session?.user?.email || '');
+
+  const {
+    mutate: editDraft,
+    isPending: isEditDraftPending,
+  } = useEditDraft({
+    userName: session?.user?.email || '',
+    draftId: currentInvoiceId as number
+  });
 
   if (isError) {
     console.error('failed to generate PDF', error);
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
-        <Addresses invoice={invoice} setInvoice={setInvoice} />
-        <LineItems invoice={invoice} setInvoice={setInvoice} />
-
-        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Extras invoice={invoice} setInvoice={setInvoice} />
-          <div className="md:col-start-2">
-            <SubTotal invoice={invoice} setInvoice={setInvoice} />
-            <div className="mt-3 text-right text-xs text-gray-500">
-              Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
-              {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
-              Balance Due: {fmt.format(totals.balance)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-2 w-full flex justify-end">
+    <>
+      <aside className="w-150 px-4 py-8">
+        <h2 className="text-2xl font-semibold tracking-wide">Drafts</h2>
+        {isLoadingDrafts
+          ? 'Loading...'
+          : (
+            !!drafts?.length
+              ? (
+                <ul>
+                  {drafts?.map(({ id, name }) => (
+                    <li key={id}>
+                      <button
+                        className={
+                          `cursor-pointer ${id === currentInvoiceId ? 'font-semibold underline' : ''}`
+                        }
+                        onClick={() => setCurrentInvoiceId(id)}
+                      >
+                        {name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
+              : 'No saved drafts'
+          )
+        }
         <button
-          className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
-          onClick={handleGeneratePdf}
-          disabled={isPending}
-        >
-          Create Invoice PDF
-        </button>
-      </div>
-    </main>
+          className="mt-4 cursor-pointer"
+          onClick={() => {
+            setCurrentInvoiceId(undefined);
+            setInvoice(getDefaultInvoiceData());
+          }}
+        >Create</button>
+      </aside>
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          {isLoadingDraftDetails
+            ? 'Loading...'
+            : (
+              <>
+                <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
+                <Addresses invoice={invoice} setInvoice={setInvoice} />
+                <LineItems invoice={invoice} setInvoice={setInvoice} />
+
+                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <Extras invoice={invoice} setInvoice={setInvoice} />
+                  <div className="md:col-start-2">
+                    <SubTotal invoice={invoice} setInvoice={setInvoice} />
+                    <div className="mt-3 text-right text-xs text-gray-500">
+                      Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
+                      {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
+                      Balance Due: {fmt.format(totals.balance)}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+        </div>
+
+        <div className="pt-2 w-full flex justify-end gap-2">
+          <button
+            className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
+            onClick={() => {
+              if (currentInvoiceId) {
+                editDraft(invoice)
+              } else {
+                createDraft(invoice);
+              }
+            }}
+            disabled={isLoadingDraftDetails || isCreateDraftPending || isEditDraftPending}
+          >
+            Save invoice draft
+          </button>
+          <button
+            className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700"
+            onClick={handleGeneratePdf}
+            disabled={isGeneratePdfPending}
+          >
+            Create Invoice PDF
+          </button>
+        </div>
+      </main>
+    </>
   );
 }
