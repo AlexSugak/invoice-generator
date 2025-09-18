@@ -46,13 +46,13 @@ export class DraftService {
 
   async deleteDraft({
     userName,
-    draftName,
+    draftId,
   }: {
     userName: string;
-    draftName: string;
+    draftId: string;
   }): Promise<void> {
     await this.db.Sql()`
-        DELETE FROM user_drafts where userName = ${userName} and name = ${draftName};
+        DELETE FROM user_drafts where userName = ${userName} and id = ${draftId};
     `;
   }
 

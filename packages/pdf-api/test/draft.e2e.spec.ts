@@ -38,23 +38,40 @@ describe('Draft API (e2e)', () => {
     await cleanup();
   });
 
-  it('should save and retrieve draft', async () => {
+  it('should create and retrieve draft', async () => {
     const testDraft = {
       invoiceNumber: '123',
       date: '2025-09-10',
       from: { name: 'Test Inc.' },
     };
 
-    // Save draft
+    // Create draft
     await request(app.getHttpServer())
-      .post('/api/users/testuser/drafts/test-draft')
+      .post('/api/users/testuser/drafts/create')
       .set('X-API-Key', apiKey)
-      .send(testDraft)
+      .send({
+        draftName: 'test-draft',
+        ...testDraft,
+      })
       .expect(200);
+
+    // Get drafts
+    const draftsResponse = await request(app.getHttpServer())
+      .get('/api/users/testuser/drafts')
+      .set('X-API-Key', apiKey)
+      .expect(200);
+
+    // TODO Idealy, each test case (`it`) should have a single assertion
+    expect(draftsResponse.body).toMatchObject([
+      {
+        id: 1,
+        name: 'test-draft',
+      },
+    ]);
 
     // Get draft
     const response = await request(app.getHttpServer())
-      .get('/api/users/testuser/drafts/test-draft')
+      .get('/api/users/testuser/drafts/1')
       .set('X-API-Key', apiKey)
       .expect(200);
 
@@ -67,14 +84,14 @@ describe('Draft API (e2e)', () => {
 
   it('should return 404 for non-existent draft', async () => {
     await request(app.getHttpServer())
-      .get('/api/users/testuser/drafts/non-existent')
+      .get('/api/users/testuser/drafts/2')
       .set('X-API-Key', apiKey)
       .expect(404);
   });
 
   it('should require valid API key', async () => {
     await request(app.getHttpServer())
-      .get('/api/users/testuser/drafts/test-draft')
+      .get('/api/users/testuser/drafts/1')
       .set('X-API-Key', 'invalid-key')
       .expect(401);
   });
@@ -88,12 +105,12 @@ describe('Draft API (e2e)', () => {
     );
 
     await request(app.getHttpServer())
-      .delete('/api/users/test-user/drafts/test-draft-2')
+      .delete('/api/users/test-user/drafts/2')
       .set('X-API-Key', apiKey)
       .expect(204);
 
     await request(app.getHttpServer())
-      .get('/api/users/test-user/drafts/test-draft-2')
+      .get('/api/users/test-user/drafts/2')
       .set('X-API-Key', apiKey)
       .expect(404);
   });
@@ -107,24 +124,24 @@ describe('Draft API (e2e)', () => {
     );
 
     await request(app.getHttpServer())
-      .delete('/api/users/test-user/drafts/test-draft-2')
+      .delete('/api/users/test-user/drafts/2')
       .set('X-API-Key', apiKey)
       .expect(204);
 
     await request(app.getHttpServer())
-      .delete('/api/users/test-user/drafts/test-draft-2')
+      .delete('/api/users/test-user/drafts/2')
       .set('X-API-Key', apiKey)
       .expect(204);
 
     await request(app.getHttpServer())
-      .get('/api/users/test-user/drafts/test-draft-2')
+      .get('/api/users/test-user/drafts/2')
       .set('X-API-Key', apiKey)
       .expect(404);
   });
 
   it('delete should do nothing if no data', async () => {
     await request(app.getHttpServer())
-      .delete('/api/users/test-user/drafts/test-draft-2')
+      .delete('/api/users/test-user/drafts/2')
       .set('X-API-Key', apiKey)
       .expect(204);
   });
@@ -138,7 +155,7 @@ describe('Draft API (e2e)', () => {
     );
 
     await request(app.getHttpServer())
-      .delete('/api/users/test-user/drafts/test-draft-2')
+      .delete('/api/users/test-user/drafts/2')
       .set('X-API-Key', 'api-key-2')
       .expect(401);
   });

@@ -141,15 +141,15 @@ export class DraftController {
     return draftDetails;
   }
 
-  @Delete('users/:userName/drafts/:draftName')
+  @Delete('users/:userName/drafts/:draftId')
   public async delete(
     @Res({ passthrough: true }) res: Response,
-    @Param('draftName') draftName: string,
+    @Param('draftId') draftId: string,
     @Param('userName') userName: string,
   ): Promise<void> {
-    logger.debug('getDraft', { draftName, userName });
+    logger.debug('getDraft', { draftId, userName });
 
-    await this.draftServie.deleteDraft({ userName, draftName });
+    await this.draftService.deleteDraft({ userName, draftId });
 
     res.status(204);
     return;
