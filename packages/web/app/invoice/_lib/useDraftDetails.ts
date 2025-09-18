@@ -1,5 +1,4 @@
 import { useGetQuery } from '@/src/lib/useGetQuery';
-import { usePostMutation } from '@/src/lib/usePostMutation';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
 if (!baseUrl) {
@@ -12,9 +11,11 @@ if (!apiKey) {
 
 export function useDraftDetails({
   userName,
+  draftId,
   enabled,
 }: {
   userName: string;
+  draftId?: number;
   enabled: boolean;
 }) {
   const query = useGetQuery<
@@ -22,7 +23,7 @@ export function useDraftDetails({
     Blob
   >(
     {
-      endpoint: `/api/users/${userName}/drafts/invoice-draft`,
+      endpoint: `/api/users/${userName}/drafts/${draftId}`,
       requestOptions: {
         noJson: true,
         headers: {
