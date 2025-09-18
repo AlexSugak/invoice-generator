@@ -54,7 +54,7 @@ export class DraftService {
   }: {
     userName: string;
   }): Promise<DraftDetails[]> {
-    const res = await sql<Array<{ name: string; params: object }>>`
+    const res = await sql<Array<{ name: string; params: string }>>`
         SELECT name, params 
         FROM user_drafts 
         WHERE userName = ${userName} 
