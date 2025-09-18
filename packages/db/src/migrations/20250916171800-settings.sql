@@ -1,0 +1,7 @@
+-- Up Migration
+
+CREATE TABLE settings (
+  pdfConfig VARCHAR NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

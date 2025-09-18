@@ -5,10 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import sql from '../db';
+import { DatabaseService } from '../db.service';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
+  constructor(private readonly db: DatabaseService) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const apiKey = request.header('X-API-Key');
@@ -17,7 +18,9 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('API key is required');
     }
 
-    const [key] = await sql<Array<{ id: number }>>`
+    // TODO: cache this
+
+    const [key] = await this.db.Sql()<Array<{ id: number }>>`
       SELECT id 
       FROM api_keys 
       WHERE key = ${apiKey} 

@@ -1,0 +1,35 @@
+name: PR checks
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+      - '.github/workflows/pr-checks.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Yarn
+        run: corepack prepare yarn@4.6.0 --activate
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build common package
+        run: yarn build:common
+
+      - name: Run API tests
+        run: |
+          yarn test:api:e2e

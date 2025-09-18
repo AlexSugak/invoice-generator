@@ -1,0 +1,11 @@
+-- Up Migration
+
+CREATE TABLE user_drafts (
+  id SERIAL PRIMARY KEY,
+  userName VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  params VARCHAR NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (userName, name)
+);
