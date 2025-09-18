@@ -9,4 +9,9 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('/debug-sentry')
+  getError() {
+    throw new Error('Test Sentry error!');
+  }
 }

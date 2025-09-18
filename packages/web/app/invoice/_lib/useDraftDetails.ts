@@ -1,14 +1,5 @@
+import { getApiBaseUrl, getApiKey } from '@/src/config';
 import { useGetQuery } from '@/src/lib/useGetQuery';
-import { usePostMutation } from '@/src/lib/usePostMutation';
-
-const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
-if (!baseUrl) {
-  throw new Error('missing NEXT_PUBLIC_API_HOST');
-}
-const apiKey = process.env.NEXT_PUBLIC_API_KEY;
-if (!apiKey) {
-  throw new Error('missing NEXT_PUBLIC_API_KEY');
-}
 
 export function useDraftDetails({
   userName,
@@ -24,9 +15,10 @@ export function useDraftDetails({
     {
       endpoint: `/api/users/${userName}/drafts/invoice-draft`,
       requestOptions: {
+        baseUrl: getApiBaseUrl(),
         noJson: true,
         headers: {
-          'X-API-Key': apiKey!,
+          'X-API-Key': getApiKey(),
         },
         fetchInit: {},
       },

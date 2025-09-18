@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Header from '../src/components/Header';
 import Providers from './providers';
+import { ToastContainer } from 'react-toastify';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -38,6 +39,7 @@ export default function RootLayout({
           <footer className="py-8 text-center text-sm text-gray-500">
             © {new Date().getFullYear()} Invoice-PDF. All rights reserved.
           </footer>
+          <ToastContainer />
         </Providers>
       </body>
     </html>

@@ -12,7 +12,10 @@ Handlebars.registerHelper('times', (a: any, b: any) => {
 Handlebars.registerHelper(
   'subtotal',
   (items: Array<{ quantity: number; rate: number }>) => {
-    if (!Array.isArray(items)) return 0;
+    // if (!Array.isArray(items)) return 0;
+    if (items.length === 0) {
+      throw new Error('at least one items is required');
+    }
     return items.reduce(
       (s, it) => s + (Number(it.quantity) || 0) * (Number(it.rate) || 0),
       0,
@@ -101,7 +104,7 @@ export class PdfService {
 async function generatePDFfromHTML(
   htmlContent: string,
 ): Promise<Uint8Array<ArrayBufferLike>> {
-  const browser = await Puppeteer.launch();
+  const browser = await Puppeteer.launch({ args: ['--no-sandbox'] });
   const page = await browser.newPage();
   await page.setContent(htmlContent);
   // Return the PDF as a Buffer

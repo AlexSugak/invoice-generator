@@ -6,6 +6,7 @@ import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
 import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
+import { toast } from 'react-toastify';
 
 const logger = getLogger('invoice editor');
 
@@ -607,7 +608,6 @@ export default function InvoicePage() {
     currency: 'USD',
   });
 
-  // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
     const subtotal = money(
       invoice.items.reduce((s, i) => s + i.quantity * i.rate, 0),
@@ -640,6 +640,9 @@ export default function InvoicePage() {
         a.remove();
         URL.revokeObjectURL(url);
       },
+      onError: (e) => {
+        toast('Failed to generate PDF!', { type: 'error' });
+      },
     });
   };
 
@@ -659,13 +662,15 @@ export default function InvoicePage() {
     }
   }, [savedDraft]);
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
+  // const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (session?.user?.email) {
+  //       saveDraft(invoice);
+  //     }
+  //   }, 2000);
+  //   return () => clearInterval(interval);
+  // }, [invoice, saveDraft, session?.user?.email]);
 
   if (isError) {
     console.error('failed to generate PDF', error);

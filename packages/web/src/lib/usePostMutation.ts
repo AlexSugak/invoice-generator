@@ -1,8 +1,11 @@
+import { getLogger } from '@invoice/common';
 import {
   useMutation,
   UseMutationOptions,
   UseMutationResult,
 } from '@tanstack/react-query';
+
+const logger = getLogger('usePostMutation');
 
 export type ApiError<T = unknown> = {
   status: number;
@@ -38,6 +41,8 @@ export async function postJson<TBody, TResponse, TErr = unknown>(
   const fullUrl = options.baseUrl
     ? `${options.baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`
     : url;
+
+  logger.debug('post request', { fullUrl, options });
 
   const res = await fetch(fullUrl, {
     method: options.method || 'POST',

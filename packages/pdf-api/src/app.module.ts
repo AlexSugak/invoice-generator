@@ -7,9 +7,10 @@ import { DraftController } from './draft/draft.controller';
 import { DraftService } from './draft/draft.service';
 import { DatabaseService } from './db.service';
 import { SettingsController } from './settings/settings.controller';
+import { SentryModule } from '@sentry/nestjs/setup';
 
 @Module({
-  imports: [],
+  imports: [SentryModule.forRoot()],
   controllers: [
     AppController,
     PdfController,

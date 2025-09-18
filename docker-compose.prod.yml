@@ -1,22 +1,73 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
     container_name: invoice-generator-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: invoice_generator
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - '5432:5432'
+      - '${DB_PORT}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER}']
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - invoice-network
+
+  pdf-api:
+    build:
+      context: .
+      dockerfile: packages/pdf-api/Dockerfile
+      args:
+        - NEXTAUTH_URL=${NEXTAUTH_URL}
+        - API_PORT=${API_PORT}
+    container_name: invoice-generator-api
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - API_KEY=${API_KEY}
+      - API_PORT=${API_PORT}
+      - NODE_ENV=production
+    ports:
+      - '${API_PORT}:${API_PORT}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - invoice-network
+
+  web:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile
+      args:
+        - NEXT_PUBLIC_API_HOST=http://localhost:${API_PORT}
+        - NEXT_PUBLIC_API_KEY=${API_KEY}
+    container_name: invoice-generator-web
+    environment:
+      - NEXT_PUBLIC_API_HOST=http://localhost:${API_PORT}
+      - NEXT_PUBLIC_API_KEY=${API_KEY}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    depends_on:
+      - pdf-api
+    ports:
+      - '3000:3000'
+    networks:
+      - invoice-network
 
 volumes:
   postgres_data:
+
+networks:
+  invoice-network:
+    driver: bridge
