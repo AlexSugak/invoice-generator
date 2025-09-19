@@ -2,11 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+ARG WEB_PORT
 ARG NEXT_PUBLIC_API_HOST
 ARG NEXT_PUBLIC_API_KEY
 
 ENV NEXT_PUBLIC_API_HOST=$NEXT_PUBLIC_API_HOST
 ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY
+ENV WEB_PORT=$WEB_PORT
 ENV NODE_ENV=production
 ENV AUTH_TRUST_HOST=true
 
@@ -28,5 +30,5 @@ COPY packages/web packages/web
 RUN yarn workspace @invoice/common build && \
     yarn workspace @invoice/web build
 
-EXPOSE 3000
+EXPOSE $WEB_PORT
 CMD ["yarn", "workspace", "@invoice/web", "start"]

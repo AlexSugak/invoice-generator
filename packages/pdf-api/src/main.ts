@@ -5,7 +5,10 @@ import { getLogger } from '@invoice/common';
 import { type NextFunction, type Request } from 'express';
 import './instrument';
 import { AllExceptionsFilter } from './all-exceptions.filter';
+import { randomUUID } from 'crypto';
+import * as Sentry from '@sentry/nestjs';
 
+// TODO: configure logger with [ConsoleLogger, SentryLogger]
 const logger = getLogger('pdf-api');
 
 async function bootstrap() {
@@ -25,7 +28,14 @@ async function bootstrap() {
 
   // Log incoming requests for debugging
   app.use((req: Request, res: Response, next: NextFunction) => {
+    const traceId = randomUUID();
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (req as any).traceId = traceId;
+    Sentry.setTag('trace_id', traceId);
+
     logger.debug(`${req.method} ${req.url}`, {
+      traceId,
       origin: req.header('origin') || req.header('Origin'),
     });
 

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { type Response } from 'express';
 import { getLogger } from '@invoice/common';
+import * as Sentry from '@sentry/nestjs';
 
 const logger = getLogger('PdfController');
 @Controller('api/pdf')
@@ -60,7 +61,13 @@ export class PdfController {
     @Body() templateParams: object,
     @Res() res: Response,
   ) {
-    logger.debug('generatePdf', { templateName });
+    logger.debug('generatePdf', { templateName, templateParams });
+    // Sentry.captureMessage('generatePdf', {
+    //   level: 'debug',
+    //   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    //   extra: templateParams as any,
+    // });
+
     const pdf = await this.pdfService.generatePdf(templateName, templateParams);
 
     const fileName = `${templateName}-${new Date().toISOString().slice(0, 10)}.pdf`;

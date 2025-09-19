@@ -37,3 +37,12 @@ POST: not idempotent (some effect)
   - add prettier:check script
   - add prettierignore to skip formatting check for e.g. node_modules
   - extend `pr-checks.yml` to run this new script
+
+# Homework (day 3)
+
+- Add Sentry integration to web app
+- Try to fix "no items -> 500 response" error by writing API e2e test first 
+- (*) configure Sentry<->Next.js sourcemap integration
+- (*) update web Dockerfile (web build step)
+- (*) unify loggig, add Sentry logger implemenation, 
+      refactor to remove explicit calls to Sentry

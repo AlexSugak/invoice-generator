@@ -50,6 +50,7 @@ services:
       args:
         - NEXT_PUBLIC_API_HOST=http://localhost:${API_PORT}
         - NEXT_PUBLIC_API_KEY=${API_KEY}
+        - WEB_PORT=${WEB_PORT}
     container_name: invoice-generator-web
     environment:
       - NEXT_PUBLIC_API_HOST=http://localhost:${API_PORT}
@@ -61,7 +62,7 @@ services:
     depends_on:
       - pdf-api
     ports:
-      - '3000:3000'
+      - '${WEB_PORT}:${WEB_PORT}'
     networks:
       - invoice-network
 

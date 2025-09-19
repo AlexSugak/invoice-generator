@@ -83,6 +83,7 @@ export class DraftController {
     });
 
     if (!draftDetails) {
+      // TODO: tell Sentry that this is a warning, not error
       throw new NotFoundException('draft not found');
     }
 
