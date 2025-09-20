@@ -1,12 +1,12 @@
 'use client';
-
-import React, { useEffect, useMemo, useState } from 'react';
-import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
-import { useDraftDetails } from './_lib/useDraftDetails';
-import { useSession } from 'next-auth/react';
-import { useSaveDraft } from './_lib/useSaveDraft';
+import '@/sentry.client.config'; // Straight import to initialize client Sentry. In other case it is better to setup SSR and client separately. Then load it on layout or _app.
 import { getLogger } from '@invoice/common';
+import * as Sentry from '@sentry/nextjs';
+import { useSession } from 'next-auth/react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
+import { useDraftDetails } from './_lib/useDraftDetails';
+import { useGenerateInvoicePdf } from './_lib/useGeneratePdf';
 
 const logger = getLogger('invoice editor');
 
@@ -651,6 +651,10 @@ export default function InvoicePage() {
     userName: session?.user?.email || '',
     enabled: !!session?.user?.email,
   });
+
+  useEffect(() => {
+    Sentry.captureMessage('[Test] Sentry Error Invoice Page Message.');
+  }, []);
 
   // logger.debug('draft', savedDraft);
   useEffect(() => {
