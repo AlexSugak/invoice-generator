@@ -1,6 +1,7 @@
 import { DatabaseService } from '../db.service';
 import { Injectable } from '@nestjs/common';
 
+
 export type DraftDetails = {
   userName: string;
   name: string;
@@ -9,7 +10,7 @@ export type DraftDetails = {
 
 @Injectable()
 export class DraftService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService) { }
 
   async saveDraft({
     userName,
@@ -25,6 +26,21 @@ export class DraftService {
         VALUES (${userName}, ${draftName}, ${JSON.stringify(params)}, now())
         ON CONFLICT (userName, name) DO UPDATE
         SET params = EXCLUDED.params
+    `;
+  }
+
+  async createDraft({
+    userName,
+    draftName,
+    params,
+  }: {
+    userName: string;
+    draftName: string;
+    params: object;
+  }): Promise<void> {
+    await this.db.Sql()`
+        INSERT INTO user_drafts (userName, name, params, updated_at)
+        VALUES (${userName}, ${draftName}, ${JSON.stringify(params)}, now())
     `;
   }
 
@@ -47,7 +63,7 @@ export class DraftService {
     userName: string;
     draftName: string;
   }): Promise<DraftDetails | null> {
-    const res = await this.db.Sql()<Array<{ params: string }>>`
+    const res = await this.db.Sql() <Array<{ params: string }>>`
         SELECT params 
         FROM user_drafts 
         WHERE userName = ${userName} 
@@ -61,5 +77,29 @@ export class DraftService {
     const [{ params }] = res;
 
     return { userName, name: draftName, params: JSON.parse(params) as object };
+  }
+
+  async getDrafts({
+    userName,
+  }: {
+    userName: string;
+  }): Promise<DraftDetails[] | null> {
+    const res = await this.db.Sql() <Array<{ name: string; params: string }>>`
+        SELECT name, params
+        FROM user_drafts
+        WHERE userName = ${userName}
+    `;
+
+    if (!res || res.length === 0) {
+      return null;
+    }
+
+    return res.map((el) => {
+      return {
+        userName,
+        name: el.name,
+        params: JSON.parse(el.params) as object,
+      };
+    });
   }
 }

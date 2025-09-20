@@ -6,6 +6,8 @@ import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
 import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
+import { useCreateDraft } from './_lib/useCreateDraft';
+import { useGetDrafts } from './_lib/useGetDrafts';
 
 const logger = getLogger('invoice editor');
 
@@ -644,22 +646,58 @@ export default function InvoicePage() {
   };
 
   const { data: session } = useSession();
-  const { data: savedDraft } = useDraftDetails({
+
+  const [draftName, setDraftName] = useState<string>('');
+  const [currentDraftName, setCurrentDraftName] = useState<string>('');
+  const [drafts, setDrafts] = useState<
+    {
+      name: string;
+      params: Record<string, any>;
+    }[]
+  >();
+
+  const { data: getDraft } = useDraftDetails({
     userName: session?.user?.email || '',
+    draftName: currentDraftName,
     enabled: !!session?.user?.email,
   });
 
-  // logger.debug('draft', savedDraft);
-  useEffect(() => {
-    logger.debug('setInvoice effect', { savedDraft });
-    const draft = JSON.parse((savedDraft as any as string) || '{}');
-    if (draft.params) {
-      logger.debug('setInvoice with ', draft.params);
-      setInvoice(draft.params as Invoice);
-    }
-  }, [savedDraft]);
+  const { data: getDrafts, refetch: refetchDrafts } = useGetDrafts({
+    userName: session?.user?.name || '',
+    enabled: !!session?.user?.email,
+  });
 
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
+  const { mutate: createDraft } = useCreateDraft(
+    session?.user?.name || '',
+    draftName,
+  );
+
+  const { mutate: saveDraft } = useSaveDraft(
+    session?.user?.name || '',
+    currentDraftName,
+  );
+
+  useEffect(() => {
+    logger.debug('drafts', getDrafts);
+    const drafts = JSON.parse((getDrafts as any) || '[]');
+    setDrafts(drafts);
+    if (drafts.length) {
+      setCurrentDraftName(drafts[0].name);
+    }
+  }, [getDrafts]);
+
+  const createNewDraft = () => {
+    createDraft(invoice, {
+      onSuccess: async () => {
+        await refetchDrafts();
+        setDraftName('');
+      },
+      onError: (error) => {
+        console.error('Failed to create draft:', error);
+      },
+    });
+  };
+
   useEffect(() => {
     const interval = setInterval(() => {
       saveDraft(invoice);
@@ -667,27 +705,106 @@ export default function InvoicePage() {
     return () => clearInterval(interval);
   }, [invoice]);
 
+  const loadDraft = (draftName: string) => {
+    let newVersionDrafts =
+      drafts &&
+      drafts.map((draft) => {
+        return draft.name === currentDraftName
+          ? { ...draft, params: invoice }
+          : draft;
+      });
+    setDrafts(newVersionDrafts);
+
+    setCurrentDraftName(draftName);
+    setInvoice(
+      (drafts &&
+        drafts.find((draft) => draft.name === draftName)?.params) as Invoice,
+    );
+  };
+
   if (isError) {
     console.error('failed to generate PDF', error);
   }
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
-        <Addresses invoice={invoice} setInvoice={setInvoice} />
-        <LineItems invoice={invoice} setInvoice={setInvoice} />
+      <div className="flex">
 
-        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Extras invoice={invoice} setInvoice={setInvoice} />
-          <div className="md:col-start-2">
-            <SubTotal invoice={invoice} setInvoice={setInvoice} />
-            <div className="mt-3 text-right text-xs text-gray-500">
-              Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
-              {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
-              Balance Due: {fmt.format(totals.balance)}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
+          <Addresses invoice={invoice} setInvoice={setInvoice} />
+          <LineItems invoice={invoice} setInvoice={setInvoice} />
+
+          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Extras invoice={invoice} setInvoice={setInvoice} />
+            <div className="md:col-start-2">
+              <SubTotal invoice={invoice} setInvoice={setInvoice} />
+              <div className="mt-3 text-right text-xs text-gray-500">
+                Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
+                {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
+                Balance Due: {fmt.format(totals.balance)}
+              </div>
             </div>
           </div>
+
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-6  max-w-md  w-lg shadow-sm flex-auto">
+          <Input
+            placeholder="..."
+            value={draftName}
+            label="Name of draft..."
+            onChange={(e) => setDraftName(e.target.value)}
+          />
+          <button
+            onClick={createNewDraft}
+            className="cursor-pointer inline-flex items-center justify-center rounded-md bg-emerald-600 px-5 py-3 mt-2 text-base font-semibold text-white hover:bg-emerald-700"
+          >
+            New Draft
+          </button>
+          <Section title="Drafts">
+            <nav className="flex min-w-[240px] flex-col gap-1 p-1.5">{drafts &&
+              drafts.map((draft, index) => {
+                return (
+                  <div
+                    key={index}
+                    className="cursor-pointer text-slate-800 flex w-full items-center justify-between rounded-md p-3 transition-all hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100"
+                  >
+                    <div
+                      role="button"
+                      onClick={() => loadDraft(draft.name)}
+                      className="flex-1"
+                    >
+                      {draft.name}
+                    </div>
+                    <button
+                      className="ml-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: delete draft
+                      }}
+                      aria-label="Delete draft"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="3,6 5,6 21,6"></polyline>
+                        <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </nav>
+          </Section>
         </div>
       </div>
 

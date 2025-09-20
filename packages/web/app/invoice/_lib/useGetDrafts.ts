@@ -1,5 +1,4 @@
 import { useGetQuery } from '@/src/lib/useGetQuery';
-import { usePostMutation } from '@/src/lib/usePostMutation';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
 if (!baseUrl) {
@@ -10,32 +9,36 @@ if (!apiKey) {
   throw new Error('missing NEXT_PUBLIC_API_KEY');
 }
 
-export function useDraftDetails({
+export function useGetDrafts({
   userName,
-  draftName,
   enabled,
 }: {
   userName: string;
-  draftName: string;
   enabled: boolean;
 }) {
-  const query = useGetQuery<
-    { userName: string; name: string; params: Record<string, any> },
-    Blob
-  >(
+  const query = useGetQuery<{ name: string; params: Record<string, any> }[]>(
     {
-      endpoint: `/api/users/${userName}/drafts/${draftName}`,
+      endpoint: `/api/users/${userName}/drafts`,
       requestOptions: {
+        // baseUrl,
         noJson: true,
         headers: {
           'X-API-Key': apiKey!,
         },
         fetchInit: {},
       },
+      mapResponse: (data: { name: string; params: Record<string, any> }[]) => {
+        try {
+          return data;
+        } catch (error) {
+          console.error('Failed to parse drafts response:', error);
+          return [];
+        }
+      },
     },
     {
-      enabled,
-      staleTime: Infinity,
+      enabled: true,
+      staleTime: Infinity
     },
   );
 
