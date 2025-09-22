@@ -1,5 +1,4 @@
 import { useGetQuery } from '@/src/lib/useGetQuery';
-import { usePostMutation } from '@/src/lib/usePostMutation';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
 if (!baseUrl) {
@@ -10,21 +9,16 @@ if (!apiKey) {
   throw new Error('missing NEXT_PUBLIC_API_KEY');
 }
 
-export function useDraftDetails({
+export function useDraftsList({
   userName,
   enabled,
-  name,
 }: {
   userName: string;
   enabled: boolean;
-  name: string;
 }) {
-  const query = useGetQuery<
-    { userName: string; name: string; params: Record<string, any> },
-    Blob
-  >(
+  const query = useGetQuery<Array<{ name: string }>, Blob>(
     {
-      endpoint: `/api/users/${userName}/drafts/${name}`,
+      endpoint: `/api/users/${userName}/drafts`,
       requestOptions: {
         noJson: true,
         headers: {

@@ -6,6 +6,7 @@ import { useDraftDetails } from './_lib/useDraftDetails';
 import { useSession } from 'next-auth/react';
 import { useSaveDraft } from './_lib/useSaveDraft';
 import { getLogger } from '@invoice/common';
+import { useDraftsList } from './_lib/useDraftsList';
 
 const logger = getLogger('invoice editor');
 
@@ -108,6 +109,125 @@ function Input({
         {suffix && <span className="px-2 text-gray-500">{suffix}</span>}
       </div>
       {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
+    </label>
+  );
+}
+
+type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
+  label?: string;
+  className?: string;
+  labelRight?: React.ReactNode;
+  options: { name: string }[];
+  placeholder?: string;
+};
+
+function Select({
+  label,
+  className,
+  labelRight,
+  options,
+  placeholder,
+  ...rest
+}: SelectProps) {
+  return (
+    <label className={className}>
+      {label && (
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">{label}</span>
+          {labelRight}
+        </div>
+      )}
+      <div
+        className={`flex items-center rounded-md border border-gray-300 bg-white`}
+      >
+        <select
+          {...rest}
+          className="w-full rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          {placeholder && <option value="">-- {placeholder} --</option>}
+          {options.map((opt) => (
+            <option key={opt.name} value={opt.name}>
+              {opt.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </label>
+  );
+}
+
+type CheckboxProps = {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label?: React.ReactNode;
+  disabled?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+};
+
+const sizeMap = {
+  sm: 'w-4 h-4',
+  md: 'w-5 h-5',
+  lg: 'w-6 h-6',
+};
+
+export function Checkbox({
+  checked,
+  onChange,
+  label,
+  disabled = false,
+  size = 'md',
+  className = '',
+}: CheckboxProps) {
+  return (
+    <label
+      className={`inline-flex items-start gap-2 cursor-pointer select-none ${disabled ? 'cursor-not-allowed opacity-60' : ''} ${className}`}
+      aria-disabled={disabled}
+    >
+      <span className={`relative flex-shrink-0 ${sizeMap[size]}`}>
+        {/* actual input (accessible) */}
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => !disabled && onChange(e.target.checked)}
+          disabled={disabled}
+          className="sr-only"
+          aria-checked={checked}
+        />
+
+        {/* custom box */}
+        <span
+          className={`inline-flex items-center justify-center border rounded-sm transition-all
+            ${size === 'sm' ? 'rounded-sm' : 'rounded-md'}
+            ${checked ? 'bg-black border-black' : 'bg-white border-black'}
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
+        >
+          {/* check icon */}
+          <svg
+            className={`w-3 h-3 ${checked ? 'opacity-100' : 'opacity-0'}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden
+          >
+            <path
+              d="M20 6L9 17l-5-5"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+
+        {/* focus ring via keyboard — visible area */}
+        <span className="absolute -inset-1 rounded-md pointer-events-none" />
+      </span>
+
+      <span className="flex flex-col">
+        {label && <span className="text-md text-gray-600">{label}</span>}
+      </span>
     </label>
   );
 }
@@ -606,6 +726,8 @@ export default function InvoicePage() {
     amountPaid: 0,
     currency: 'USD',
   });
+  const [draftsList, setDraftsList] = useState<Array<{ name: string }>>([]);
+  const [draftName, setDraftName] = useState<string>('');
 
   // (Optional) expose totals via memo if you want to send elsewhere / save
   const totals = useMemo(() => {
@@ -629,6 +751,10 @@ export default function InvoicePage() {
     error,
   } = useGenerateInvoicePdf();
   const handleGeneratePdf = async () => {
+    if (checkedSaveDraft) {
+      await saveDraft(invoice);
+      await getDraftList();
+    }
     await generatePdf(invoice, {
       onSuccess: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -644,35 +770,69 @@ export default function InvoicePage() {
   };
 
   const { data: session } = useSession();
-  const { data: savedDraft } = useDraftDetails({
+  const { data: savedDraft, refetch: getDraftDetails } = useDraftDetails({
+    userName: session?.user?.email || '',
+    enabled: false,
+    name: draftName,
+  });
+  const { data: draftList, refetch: getDraftList } = useDraftsList({
     userName: session?.user?.email || '',
     enabled: !!session?.user?.email,
   });
 
+  useEffect(() => {
+    logger.debug('draftList effect', { draftList });
+    const drafts = JSON.parse((draftList as any as string) || '{}');
+
+    if (drafts.length > 0) {
+      logger.debug('setDraftsList with ', draftList);
+      setDraftsList(drafts);
+    }
+  }, [draftList]);
+
   // logger.debug('draft', savedDraft);
   useEffect(() => {
-    logger.debug('setInvoice effect', { savedDraft });
-    const draft = JSON.parse((savedDraft as any as string) || '{}');
-    if (draft.params) {
-      logger.debug('setInvoice with ', draft.params);
-      setInvoice(draft.params as Invoice);
+    if (draftName && session?.user?.email) {
+      getDraftDetails();
+    }
+  }, [draftName]);
+
+  const [checkedSaveDraft, setCheckedSaveDraft] = useState(false);
+  const [draftTitle, setDraftTitle] = useState<string>('');
+
+  const { mutateAsync: saveDraft } = useSaveDraft(
+    session?.user?.email || '',
+    draftTitle,
+  );
+
+  useEffect(() => {
+    if (savedDraft) {
+      logger.debug('setInvoice effect', { savedDraft });
+      const draft = JSON.parse((savedDraft as any as string) || '{}');
+      if (draft.params) {
+        logger.debug('setInvoice with ', draft.params);
+        setInvoice(draft.params as Invoice);
+      }
     }
   }, [savedDraft]);
-
-  const { mutate: saveDraft } = useSaveDraft(session?.user?.email || '');
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveDraft(invoice);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [invoice]);
 
   if (isError) {
     console.error('failed to generate PDF', error);
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <main className="mx-auto max-w-6xl px-4 py-4">
+      <Select
+        label="Draft Name"
+        placeholder="Choose draft"
+        options={draftsList}
+        value={draftName}
+        className="flex gap-4 mb-5 justify-end"
+        onChange={(e) => {
+          setDraftName(e.target.value);
+          setDraftTitle(e.target.value);
+        }}
+      />
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <InvoiceHeader invoice={invoice} setInvoice={setInvoice} />
         <Addresses invoice={invoice} setInvoice={setInvoice} />
@@ -686,6 +846,27 @@ export default function InvoicePage() {
               Subtotal: {fmt.format(totals.subtotal)} · Tax:{' '}
               {fmt.format(totals.tax)} · Total: {fmt.format(totals.total)} ·
               Balance Due: {fmt.format(totals.balance)}
+            </div>
+            <div className="pt-2 w-full flex items-center h-[50px] gap-4 ml-1">
+              <div className="basis-1/3">
+                <Checkbox
+                  checked={checkedSaveDraft}
+                  onChange={setCheckedSaveDraft}
+                  label="Save draft"
+                />
+              </div>
+
+              {checkedSaveDraft && (
+                <div className="w-40 basis-2/3">
+                  <Input
+                    name="draftTitle"
+                    placeholder="Enter draft title"
+                    value={draftTitle}
+                    onChange={(e) => setDraftTitle((v) => e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
