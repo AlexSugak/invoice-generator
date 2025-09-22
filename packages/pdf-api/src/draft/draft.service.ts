@@ -28,17 +28,17 @@ export class DraftService {
     `;
   }
 
-  async deleteDraft({
-    userName,
-    draftName,
-  }: {
-    userName: string;
-    draftName: string;
-  }): Promise<void> {
-    await this.db.Sql()`
-        DELETE FROM user_drafts where userName = ${userName} and name = ${draftName};
-    `;
-  }
+  // async deleteDraft({
+  //   userName,
+  //   draftName,
+  // }: {
+  //   userName: string;
+  //   draftName: string;
+  // }): Promise<void> {
+  //   await this.db.Sql()`
+  //       DELETE FROM user_drafts where userName = ${userName} and name = ${draftName};
+  //   `;
+  // }
 
   async getDraft({
     userName,
@@ -64,7 +64,7 @@ export class DraftService {
   }
 
   async getDrafts(userName: string): Promise<DraftDetails[]> {
-    const res = await sql<
+    const res = await this.db.Sql()<
       Array<{ userName: string; name: string; params: string }>
     >`
         SELECT name, params 
@@ -90,7 +90,7 @@ export class DraftService {
     userName: string;
     draftName: string;
   }): Promise<void> {
-    await sql`
+    await this.db.Sql()`
         DELETE FROM user_drafts 
         WHERE userName = ${userName} 
         AND name = ${draftName} 

@@ -142,4 +142,43 @@ describe('Draft API (e2e)', () => {
       .set('X-API-Key', 'api-key-2')
       .expect(401);
   });
+
+  it('should return drafts array', async () => {
+    await db.exec(
+      `
+      INSERT INTO user_drafts (userName, name, params, updated_at)
+      VALUES 
+        ('test-user', 'draft-1', '{}', now()),
+        ('test-user', 'draft-2', '{}', now())
+    `,
+    );
+    const response = await request(app.getHttpServer())
+      .get('/api/users/test-user/drafts/')
+      .set('X-API-Key', apiKey)
+      .expect(200);
+
+    expect(response.body).toHaveLength(2);
+    expect(response.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'draft-1' }),
+        expect.objectContaining({ name: 'draft-2' }),
+      ]),
+    );
+    
+  });
+
+  it('should return empty array if there is nothing found in db', async () => {
+    
+    const response = await request(app.getHttpServer())
+      .get('/api/users/test-user/drafts/')
+      .set('X-API-Key', apiKey)
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBe(0);
+    // expect(response.body).toHaveLength(0);
+    // expect(response.body).toEqual([]);
+    // which check condition should we use here?
+  });
+
 });
