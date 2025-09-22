@@ -751,7 +751,10 @@ export default function InvoicePage() {
     error,
   } = useGenerateInvoicePdf();
   const handleGeneratePdf = async () => {
-    checkedSaveDraft && saveDraft(invoice);
+    if (checkedSaveDraft) {
+      await saveDraft(invoice);
+      await getDraftList();
+    }
     await generatePdf(invoice, {
       onSuccess: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -772,7 +775,7 @@ export default function InvoicePage() {
     enabled: false,
     name: draftName,
   });
-  const { data: draftList } = useDraftsList({
+  const { data: draftList, refetch: getDraftList } = useDraftsList({
     userName: session?.user?.email || '',
     enabled: !!session?.user?.email,
   });
@@ -797,7 +800,7 @@ export default function InvoicePage() {
   const [checkedSaveDraft, setCheckedSaveDraft] = useState(false);
   const [draftTitle, setDraftTitle] = useState<string>('');
 
-  const { mutate: saveDraft } = useSaveDraft(
+  const { mutateAsync: saveDraft } = useSaveDraft(
     session?.user?.email || '',
     draftTitle,
   );

@@ -36,3 +36,4 @@ POST: not idempotent (some effect)
 - Add checkbox "Save draft"
 - When checkbox is selected -> show input field "Enter draft name"
 - On clicking "Create invoice", if the checkbox is selected -> save a new draft with the entered name
+- If draft name already exists, it will be overwritten

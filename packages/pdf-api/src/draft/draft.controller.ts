@@ -8,15 +8,52 @@ import {
   Put,
 } from '@nestjs/common';
 import { RequireApiKey } from '../decorators/require-api-key.decorator';
-import { ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { getLogger } from '@invoice/common';
-import { DraftDetails, DraftService } from './draft.service';
+import { DraftService } from './draft.service';
+
+export class DraftDetailsDto {
+  @ApiProperty({
+    example: 'john',
+    description: 'Name of the user',
+  })
+  userName!: string;
+
+  @ApiProperty({
+    example: 'invoice-draft-1',
+    description: 'Name of the draft',
+  })
+  name!: string;
+
+  @ApiProperty({
+    description: 'Arbitrary JSON draft parameters',
+    type: 'object',
+    additionalProperties: true,
+    example: {
+      invoiceNumber: '123',
+      date: '2025-09-10',
+      from: { name: 'Acme Inc.' },
+      billTo: { name: 'Client LLC' },
+      items: [{ description: 'Design work', quantity: 10, rate: 50 }],
+      taxPercent: 19,
+      currency: 'USD',
+    },
+  })
+  params!: Record<string, any>;
+}
 
 const logger = getLogger('DraftController');
 @Controller('api')
 @RequireApiKey()
 export class DraftController {
-  constructor(private readonly draftServie: DraftService) {}
+  constructor(private readonly draftService: DraftService) {}
 
   @Put('users/:userName/drafts/:draftName')
   @HttpCode(200)
@@ -59,7 +96,7 @@ export class DraftController {
     @Body() draftParams: object,
   ) {
     logger.debug('saveDraft', { draftName, userName });
-    await this.draftServie.saveDraft({
+    await this.draftService.saveDraft({
       userName,
       draftName,
       params: draftParams,
@@ -67,13 +104,31 @@ export class DraftController {
   }
 
   @Get('users/:userName/drafts/:draftName')
+  @ApiOperation({ summary: 'Get a single draft for a user' })
+  @ApiParam({
+    name: 'draftName',
+    description: 'Name of the draft',
+    required: true,
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'userName',
+    description: 'Name of the user',
+    required: true,
+    schema: { type: 'string' },
+  })
+  @ApiOkResponse({
+    description: 'Draft details returned successfully',
+    type: DraftDetailsDto,
+  })
+  @ApiNotFoundResponse({ description: 'Draft not found' })
   public async getDraft(
     @Param('draftName') draftName: string,
     @Param('userName') userName: string,
-  ): Promise<DraftDetails> {
+  ): Promise<DraftDetailsDto> {
     logger.debug('getDraft', { draftName, userName });
 
-    const draftDetails = await this.draftServie.getDraft({
+    const draftDetails = await this.draftService.getDraft({
       userName,
       draftName,
     });
@@ -86,12 +141,32 @@ export class DraftController {
   }
 
   @Get('users/:userName/drafts')
-  public async getAllDrfts(
+  @ApiOperation({ summary: 'Get all drafts for a user' })
+  @ApiParam({
+    name: 'userName',
+    description: 'Name of the user',
+    required: true,
+    schema: { type: 'string' },
+  })
+  @ApiOkResponse({
+    description: 'List of user drafts',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Drafts not found' })
+  public async getAllDrafts(
     @Param('userName') userName: string,
   ): Promise<Array<{ name: string }>> {
     logger.debug('getAllDrafts', { userName });
 
-    const draftList = await this.draftServie.getAllDrafts({
+    const draftList = await this.draftService.getAllDrafts({
       userName,
     });
 

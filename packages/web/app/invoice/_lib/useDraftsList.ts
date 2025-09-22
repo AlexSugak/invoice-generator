@@ -1,5 +1,4 @@
 import { useGetQuery } from '@/src/lib/useGetQuery';
-import { usePostMutation } from '@/src/lib/usePostMutation';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
 if (!baseUrl) {
@@ -30,7 +29,7 @@ export function useDraftsList({
     },
     {
       enabled,
-      staleTime: Infinity,
+      staleTime: 0,
     },
   );
 
