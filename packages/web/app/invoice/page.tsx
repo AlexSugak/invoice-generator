@@ -571,6 +571,7 @@ function Extras({
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <TextArea
         label="Notes"
+        name='notes'
         placeholder="Notes - any relevant information not already covered"
         value={invoice.notes ?? ''}
         onChange={(e) => setInvoice((v) => ({ ...v, notes: e.target.value }))}
@@ -724,6 +725,7 @@ export default function InvoicePage() {
         </label>
         <select
           id="options"
+          name='drafts'
           value={selectedDraft}
           onChange={handleSelectDraft}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -776,7 +778,7 @@ export default function InvoicePage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-gray-800/60">
+        <div className="update-modal fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-gray-800/60">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
             <Input
               name="draftName"
@@ -803,6 +805,7 @@ export default function InvoicePage() {
               <button
                 className="px-4 py-2 bg-emerald-500 text-white font-semibold rounded hover:bg-emerald-600"
                 onClick={handleSaveDraft}
+                disabled={!draftName && !selectedDraft}
               >
                 Save draft
               </button>

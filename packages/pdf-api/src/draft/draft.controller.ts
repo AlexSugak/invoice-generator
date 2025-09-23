@@ -133,14 +133,18 @@ export class DraftController {
     schema: { type: 'string' },
   })
   public async deleteDraft(
+    @Res({ passthrough: true }) res: Response,
     @Param('draftName') draftName: string,
     @Param('userName') userName: string,
-  ) {
+  ): Promise<void> {
     logger.debug('deleteDraft', { draftName, userName });
 
     await this.draftServie.deleteDraft({
       userName,
       draftName,
     });
+
+    res.status(204);
+    return;
   }
 }

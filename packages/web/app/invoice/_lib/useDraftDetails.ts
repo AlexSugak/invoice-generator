@@ -1,5 +1,6 @@
 import { getApiBaseUrl, getApiKey } from '@/src/config';
 import { useGetQuery } from '@/src/lib/useGetQuery';
+import { usePostMutation } from '@/src/lib/usePostMutation';
 
 export function useDraftDetails({
   userName,
@@ -40,7 +41,7 @@ export function useDeleteDraft(userName: string, draftName: string) {
     requestOptions: {
       method: 'DELETE',
       headers: {
-        'X-API-Key': apiKey!,
+        'X-API-Key': getApiKey(),
       },
       fetchInit: {},
     },

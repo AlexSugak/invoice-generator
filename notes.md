@@ -28,16 +28,6 @@ POST: not idempotent (some effect)
 - Continue to save drafts every 2 seconds? Or use separate button? (UX)
 - Make PR
 
-# Homework (day 2)
-
-- Add e2e tests for new endpoints which you added before
-- If did not do day1 homework: create new endpoint (e.g. settings)
-- [OPTIONAL]: add new web e2e tests (playwright) for new features
-- Extend `.github/workflows/pr-checks.yml`: add prettier format check
-  - add prettier:check script
-  - add prettierignore to skip formatting check for e.g. node_modules
-  - extend `pr-checks.yml` to run this new script
-
 # Solution
 
 - Where and how do we store different drafts?
@@ -52,6 +42,16 @@ POST: not idempotent (some effect)
   - Allow user to select from existing drafts and fill the form fields with this data
   - Add a button that allows saving/editing a draft: a modal will be opened, user can type a new draft name or use the selected draft name, and save or delete draft by providing the name
   - After saving/editing the new draft list will be requested
+
+# Homework (day 2)
+
+- Add e2e tests for new endpoints which you added before
+- If did not do day1 homework: create new endpoint (e.g. settings)
+- [OPTIONAL]: add new web e2e tests (playwright) for new features
+- Extend `.github/workflows/pr-checks.yml`: add prettier format check
+  - add prettier:check script
+  - add prettierignore to skip formatting check for e.g. node_modules
+  - extend `pr-checks.yml` to run this new script
   
 # Homework (day 3)
 
