@@ -33,3 +33,6 @@ jobs:
       - name: Run API tests
         run: |
           yarn test:api:e2e
+
+      - name: Prettier format check
+        run: yarn prettier:check

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+build/
+*.min.js
+*.min.css
+
+yarn.lock
+.env
+.env.local
+README.md

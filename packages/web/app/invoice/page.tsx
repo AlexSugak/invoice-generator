@@ -592,7 +592,7 @@ function Extras({
  * Root Page
  * ========================= */
 const initialInvoice: Invoice = {
-  invoiceNumber: String(Date.now()),
+  invoiceNumber: '123',
   date: '',
   paymentTerms: '',
   dueDate: '',
