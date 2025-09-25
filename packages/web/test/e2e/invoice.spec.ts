@@ -18,7 +18,7 @@ test.describe('Invoice Page', () => {
   test('should generate and download PDF', async ({ page }) => {
     // 1. Navigate to invoice page
     await page.goto('http://localhost:3000/invoice');
-    
+
     // 2. Fill in the form with test data
     await page.fill('input[name="invoiceNumber"]', '123');
     await page.fill('input[placeholder="Who is this to?"]', 'Client Name');
@@ -155,7 +155,7 @@ test.describe('Invoice Page', () => {
     });
 
     let deleteCalled = false;
-    await page.route('**/api/users/test-user/drafts/draft-2', async route => {
+    await page.route('**/api/users/test-user/drafts/draft-1', async route => {
       const apiKey = route.request().headers()['x-api-key'];
       expect(apiKey).toBeDefined();
 
