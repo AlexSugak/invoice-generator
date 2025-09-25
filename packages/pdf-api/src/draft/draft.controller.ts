@@ -90,15 +90,59 @@ export class DraftController {
     return draftDetails;
   }
 
+  // @Delete('users/:userName/drafts/:draftName')
+  // public async delete(
+  //   @Res({ passthrough: true }) res: Response,
+  //   @Param('draftName') draftName: string,
+  //   @Param('userName') userName: string,
+  // ): Promise<void> {
+  //   logger.debug('getDraft', { draftName, userName });
+
+  //   await this.draftServie.deleteDraft({ userName, draftName });
+
+  //   res.status(204);
+  //   return;
+  // }
+
+  @Get('users/:userName/drafts/')
+  public async getDrafts(
+    @Param('userName') userName: string,
+  ): Promise<DraftDetails[]> {
+    logger.debug('getDraftsList', { userName });
+
+    const drafts = await this.draftServie.getDrafts(userName);
+
+    return drafts;
+  }
+
   @Delete('users/:userName/drafts/:draftName')
-  public async delete(
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Deletes user template draft',
+  })
+  @ApiParam({
+    name: 'draftName',
+    description: 'Name of the draft',
+    required: true,
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'userName',
+    description: 'Name of the user',
+    required: true,
+    schema: { type: 'string' },
+  })
+  public async deleteDraft(
     @Res({ passthrough: true }) res: Response,
     @Param('draftName') draftName: string,
     @Param('userName') userName: string,
   ): Promise<void> {
-    logger.debug('getDraft', { draftName, userName });
+    logger.debug('deleteDraft', { draftName, userName });
 
-    await this.draftServie.deleteDraft({ userName, draftName });
+    await this.draftServie.deleteDraft({
+      userName,
+      draftName,
+    });
 
     res.status(204);
     return;

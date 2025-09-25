@@ -1,9 +1,9 @@
 import { getApiBaseUrl, getApiKey } from '@/src/config';
 import { usePostMutation } from '@/src/lib/usePostMutation';
 
-export function useSaveDraft(userName: string) {
+export function useSaveDraft(userName: string, draftName: string) {
   return usePostMutation<Record<string, any>, Blob>({
-    endpoint: `/api/users/${userName}/drafts/invoice-draft`,
+    endpoint: `/api/users/${userName}/drafts/${draftName}`,
     requestOptions: {
       baseUrl: getApiBaseUrl(),
       noJson: true,
@@ -16,4 +16,4 @@ export function useSaveDraft(userName: string) {
       fetchInit: {},
     },
   });
-}
+};
