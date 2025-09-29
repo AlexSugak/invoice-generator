@@ -1194,6 +1194,7 @@ __metadata:
   resolution: "@invoice/generator@workspace:."
   dependencies:
     concurrently: "npm:^9.2.1"
+    prettier: "npm:^3.6.2"
     wait-on: "npm:^8.0.4"
   languageName: unknown
   linkType: soft
@@ -7730,7 +7731,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.4.2":
+"prettier@npm:^3.4.2, prettier@npm:^3.6.2":
   version: 3.6.2
   resolution: "prettier@npm:3.6.2"
   bin:
