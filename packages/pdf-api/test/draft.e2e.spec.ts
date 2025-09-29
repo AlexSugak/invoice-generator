@@ -142,4 +142,32 @@ describe('Draft API (e2e)', () => {
       .set('X-API-Key', 'api-key-2')
       .expect(401);
   });
+
+  it('should return a list of drafts for a user', async () => {
+    await db.exec(
+      `
+      INSERT INTO user_drafts (userName, name, params, updated_at)
+      VALUES ('test-user', 'test-draft-2', '{}', now())
+    `,
+    );
+
+    const response = await request(app.getHttpServer())
+      .get(`/api/users/test-user/drafts`)
+      .set('X-API-Key', apiKey)
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toEqual([{ name: 'test-draft-2' }]);
+  });
+
+  it('should return an empty array if user has no drafts', async () => {
+    const userName = 'no-drafts-user';
+
+    const response = await request(app.getHttpServer())     
+      .get(`/api/users/${userName}/drafts`)
+      .set('X-API-Key', apiKey)
+      .expect(200);
+
+    expect(response.body).toEqual([]);
+  })
 });

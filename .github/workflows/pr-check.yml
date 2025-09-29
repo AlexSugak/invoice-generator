@@ -33,3 +33,5 @@ jobs:
       - name: Run API tests
         run: |
           yarn test:api:e2e
+      - name: Run Prettier
+        run: yarn prettier

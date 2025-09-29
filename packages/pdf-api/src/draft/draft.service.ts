@@ -68,9 +68,9 @@ export class DraftService {
   }: {
     userName: string;
   }): Promise<{ name: string }[]> {
-    const res = await sql<Array<{ name: string }>>`
+    const res = await this.db.Sql()<Array<{ name: string }>>`
     SELECT name
-    FROM user_drafts
+    FROM user_drafts    
     WHERE userName = ${userName}
   `;
 
